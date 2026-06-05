@@ -1,0 +1,6 @@
+{
+  "name": "PEA Prompt Library",
+  "description": "Enterprise prompt storage, discovery, sharing, and template usage library for PEA employees.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
