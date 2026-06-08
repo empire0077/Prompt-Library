@@ -1,6 +1,8 @@
 {
-  "name": "PEA Prompt Library",
-  "description": "Enterprise prompt storage, discovery, sharing, and template usage library for PEA employees.",
+  "name": "Your Prompt Library",
+  "description": "คลังจัดเก็บ ตรวจค้น แลกเปลี่ยน และใช้งานพรอมต์ (AI Prompt Library) สำหรับเก็บสะสมโครงร่างคำสั่งของคุณเองอย่างเป็นระบบ",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
