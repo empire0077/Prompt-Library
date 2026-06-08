@@ -9,45 +9,131 @@ import fs from 'fs';
 const PORT = 3000;
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres';
 
-const CANDIDATE_STRINGS = [
-  process.env.DATABASE_URL,
-  // Singapore (ap-southeast-1) - Connection Pooler on port 6543 (Transaction Mode)
-  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres',
-  // Singapore (ap-southeast-1) - Connection Pooler on port 5432 (Session Mode)
-  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres',
-  // Direct IPv4/IPv6 host fallback (works locally, but fails on IPv4-only serverless hosts lacking IPv6)
-  'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres'
-].filter(Boolean) as string[];
+const CANDIDATE_STRINGS: string[] = []; // No longer strictly needed as we build dynamically in ensureConnected
 
 let activeSql: any = null;
 let activeConnectionStringUsed: string = '';
+let connectionPromise: Promise<any> | null = null;
 
 async function ensureConnected(): Promise<any> {
   if (activeSql) return activeSql;
+  if (connectionPromise) return connectionPromise;
 
-  console.log('Resolving Supabase Connection...');
-  for (const connStr of CANDIDATE_STRINGS) {
-    const parsedIsLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
-    const tempSql = postgres(connStr, {
-      ssl: parsedIsLocal ? undefined : { rejectUnauthorized: false },
-      connect_timeout: 3
-    });
-
+  connectionPromise = (async () => {
     try {
-      await tempSql`SELECT 1`;
-      console.log(`Successfully connected using connection string format: ${connStr.replace(/:[^:@\s]+@/, ':***@')}`);
-      activeSql = tempSql;
-      activeConnectionStringUsed = connStr;
+      console.log('Resolving Supabase Connection dynamically...');
+      
+      const candidates: string[] = [];
+      if (process.env.DATABASE_URL) {
+        candidates.push(process.env.DATABASE_URL);
+      }
+
+      // Add pooler URLs for all primary Supabase / AWS regions
+      const REGIONS = [
+        'ap-southeast-1', // Singapore (highly likely)
+        'ap-northeast-1', // Tokyo
+        'ap-northeast-2', // Seoul
+        'ap-southeast-2', // Sydney
+        'ap-south-1',      // Mumbai
+        'us-east-1',      // N. Virginia
+        'us-east-2',      // Ohio
+        'us-west-1',      // N. California
+        'us-west-2',      // Oregon
+        'eu-central-1',   // Frankfurt
+        'eu-west-1',      // Ireland
+        'eu-west-2',      // London
+        'eu-west-3',      // Paris
+        'ca-central-1',   // Canada
+        'sa-east-1',      // Sao Paulo
+      ];
+
+      for (const r of REGIONS) {
+        // Port 6543 (Transaction mode - highly recommended for serverless/Vercel functions)
+        candidates.push(`postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-${r}.pooler.supabase.com:6543/postgres`);
+        // Port 5432 (Session mode fallback)
+        candidates.push(`postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-${r}.pooler.supabase.com:5432/postgres`);
+      }
+
+      // Direct IPv4/IPv6 host fallback (works locally, but fails on IPv4-only serverless hosts lacking IPv6)
+      candidates.push('postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres');
+
+      const uniqueCandidates = Array.from(new Set(candidates)).filter(Boolean);
+
+      console.log(`Starting concurrent connection checks to ${uniqueCandidates.length} potential database endpoints...`);
+
+      const result = await new Promise<{ sql: any; connStr: string }>((resolve, reject) => {
+        let resolved = false;
+        let finishedCount = 0;
+        const clients: any[] = [];
+        const errors: string[] = [];
+
+        const handleSuccess = (client: any, connStr: string) => {
+          if (!resolved) {
+            resolved = true;
+            console.log(`Successfully completed pooler discovery check. Target found: ${connStr.replace(/:[^:@\s]+@/, ':***@')}`);
+            // Close all other connection clients
+            clients.forEach((c) => {
+              if (c !== client) {
+                c.end().catch(() => {});
+              }
+            });
+            resolve({ sql: client, connStr });
+          } else {
+            // Already resolved by a faster candidates, terminate this client
+            client.end().catch(() => {});
+          }
+        };
+
+        const handleFailure = (client: any, connStr: string, errMsg: string) => {
+          finishedCount++;
+          // Safe logging of the warning
+          if (!resolved) {
+            console.warn(`Connection attempt failed for: ${connStr.replace(/:[^:@\s]+@/, ':***@')}. Error: ${errMsg}`);
+          }
+          errors.push(`${connStr.replace(/:[^:@\s]+@/, ':***@')} failed: ${errMsg}`);
+          try {
+            client.end().catch(() => {});
+          } catch (_) {}
+
+          if (finishedCount === uniqueCandidates.length && !resolved) {
+            reject(new Error(`All connection pooler and direct database candidates failed on this host.\nErrors:\n${errors.join('\n')}`));
+          }
+        };
+
+        uniqueCandidates.forEach((connStr) => {
+          const parsedIsLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
+          
+          try {
+            const client = postgres(connStr, {
+              ssl: parsedIsLocal ? undefined : { rejectUnauthorized: false },
+              connect_timeout: 4 // Cap at 4s for concurrent lookups
+            });
+            clients.push(client);
+
+            client`SELECT 1`
+              .then(() => handleSuccess(client, connStr))
+              .catch((err) => handleFailure(client, connStr, err.message || String(err)));
+          } catch (err: any) {
+            finishedCount++;
+            errors.push(`${connStr.replace(/:[^:@\s]+@/, ':***@')} config error: ${err.message || String(err)}`);
+            if (finishedCount === uniqueCandidates.length && !resolved) {
+              reject(new Error(`All database connection pool configurations failed.\nErrors:\n${errors.join('\n')}`));
+            }
+          }
+        });
+      });
+
+      activeSql = result.sql;
+      activeConnectionStringUsed = result.connStr;
       return activeSql;
     } catch (err: any) {
-      console.warn(`Connection attempt failed for: ${connStr.replace(/:[^:@\s]+@/, ':***@')}. Error: ${err.message || err}`);
-      try {
-        await tempSql.end();
-      } catch (e) {}
+      connectionPromise = null; // Clear key on failures to allow retries
+      console.error('DATABASE CONCURRENT DISCOVERY FAILED:', err.message || err);
+      throw err;
     }
-  }
+  })();
 
-  throw new Error('All candidate connection attempts to Supabase failed. Please check database status or custom DATABASE_URL.');
+  return connectionPromise;
 }
 
 const sqlProxy = new Proxy(() => {}, {
