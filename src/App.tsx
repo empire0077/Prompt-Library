@@ -1,461 +1,419 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from 'react';
 import { 
-  Plus, 
-  RotateCcw, 
-  Sparkles, 
-  BookOpen, 
-  Layout, 
-  Lock, 
-  Globe, 
-  Star, 
-  ChevronRight, 
-  Copy, 
-  Zap, 
-  User, 
-  Layers, 
-  Check, 
-  AlertCircle
-} from "lucide-react";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import PromptCard from "./components/PromptCard";
-import DetailPanel from "./components/DetailPanel";
-import QuickSaveDrawer from "./components/QuickSaveDrawer";
-import { HydratedPrompt, DbCategory, DbTool, DbUser } from "./types";
+  Globe, Lock, Star, Sparkles, Filter, Database, 
+  Trash2, Terminal, RefreshCw, AlertCircle, Bookmark, Compass
+} from 'lucide-react';
+import Sidebar from './components/Sidebar';
+import LogoIcon from './components/LogoIcon';
+import PromptCard from './components/PromptCard';
+import UseTemplateModal from './components/UseTemplateModal';
+import PromptModal from './components/PromptModal';
+import SignInModal from './components/SignInModal';
+import { User, Prompt, PromptCategory, Tool } from './types';
 
 export default function App() {
-  // State variables for list and catalogs
-  const [prompts, setPrompts] = useState<HydratedPrompt[]>([]);
-  const [categories, setCategories] = useState<DbCategory[]>([]);
-  const [tools, setTools] = useState<DbTool[]>([]);
-  const [currentUser, setCurrentUser] = useState<DbUser | null>(null);
+  // Authentication & Session state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Filter conditions
-  const [activeTab, setActiveTab] = useState<string>("all"); // 'all', 'private', 'public', 'favorites'
+  // App Master data collections
+  const [categories, setCategories] = useState<PromptCategory[]>([]);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+
+  // Filtering states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedScope, setSelectedScope] = useState('all'); // 'all', 'public', 'private', 'favorites'
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedTool, setSelectedTool] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
-  const [sortOrder, setSortOrder] = useState<string>("recently_updated");
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
-  // Selected item and drawer triggers
-  const [selectedPrompt, setSelectedPrompt] = useState<HydratedPrompt | null>(null);
-  const [isQuickSaveOpen, setIsQuickSaveOpen] = useState<boolean>(false);
+  // Loading & Error states
+  const [loading, setLoading] = useState(true);
+  const [promptLoading, setPromptLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Feedback State (Toasts)
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<'success' | 'info'>('success');
+  // Modal Visibility controls
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [isUseTemplateOpen, setIsUseTemplateOpen] = useState(false);
+  const [activeUsePrompt, setActiveUsePrompt] = useState<Prompt | null>(null);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [activeEditPrompt, setActiveEditPrompt] = useState<Prompt | null>(null);
 
-  // Load catalogs on mount
+  // 1. Initial mounting and user auth validation
   useEffect(() => {
-    const fetchCatalogs = async () => {
+    const checkSession = async () => {
       try {
-        const [catRes, toolRes, userRes] = await Promise.all([
-          fetch("/api/categories"),
-          fetch("/api/tools"),
-          fetch("/api/session")
-        ]);
-        
-        if (catRes.ok) setCategories(await catRes.json());
-        if (toolRes.ok) setTools(await toolRes.json());
-        if (userRes.ok) setCurrentUser(await userRes.json());
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const user = await response.json();
+          setCurrentUser(user);
+        }
       } catch (err) {
-        console.error("Error loading catalogs:", err);
+        console.error('Session authentication failed/or empty proxy', err);
       }
     };
 
-    fetchCatalogs();
+    const loadMasterData = async () => {
+      try {
+        const [catsRes, toolsRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/tools')
+        ]);
+
+        if (catsRes.ok) {
+          const catsData = await catsRes.json();
+          setCategories(catsData);
+        }
+        if (toolsRes.ok) {
+          const toolsData = await toolsRes.json();
+          setTools(toolsData);
+        }
+      } catch (err) {
+        console.error('Failed to load categories/tools master data', err);
+        setError('ไม่สามารถโหลดข้อมูลจัดกลุ่มงานและเครื่องมือเป้าหมายได้');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+    loadMasterData();
   }, []);
 
-  // Fetch / Query Prompts whenever filter states change
+  // 2. Load Prompts list based on filters/permissions
   const fetchPromptsData = async () => {
+    setPromptLoading(true);
     try {
       const params = new URLSearchParams();
-      if (searchQuery) params.append("search", searchQuery);
-      if (selectedTool) params.append("tool", selectedTool);
-      if (selectedType) params.append("type", selectedType);
-      if (sortOrder) params.append("sort", sortOrder);
-      if (activeTab) params.append("tab", activeTab);
-      if (selectedCategory) params.append("category", selectedCategory);
+      if (searchQuery.trim()) params.append('search', searchQuery);
+      if (selectedScope) params.append('scope', selectedScope);
+      if (selectedCategory) params.append('category_id', selectedCategory);
+      if (selectedTool) params.append('tool_id', selectedTool);
 
-      const res = await fetch(`/api/prompts?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPrompts(data);
-        
-        // Retain selection if the active selection still exists in the fetched results
-        if (selectedPrompt) {
-          const matched = data.find((p: HydratedPrompt) => p.id === selectedPrompt.id);
-          if (matched) {
-            setSelectedPrompt(matched);
-          }
-        }
+      const response = await fetch(`/api/prompts?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('เรียกรายการคำสั่งในคลัง AI ล้มเหลว');
       }
-    } catch (err) {
-      console.error("Error pulling prompts:", err);
+      const data = await response.json();
+      setPrompts(data);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'เกิดข้อผิดพลาดในการดึงข้อมูลคำสั่ง');
+    } finally {
+      setPromptLoading(false);
     }
   };
 
   useEffect(() => {
     fetchPromptsData();
-  }, [activeTab, selectedCategory, searchQuery, selectedTool, selectedType, sortOrder]);
+  }, [searchQuery, selectedScope, selectedCategory, selectedTool, currentUser]);
 
-  const showToast = (msg: string, type: 'success' | 'info' = 'success') => {
-    setToastMessage(msg);
-    setToastType(type);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const resetFilters = () => {
-    setSearchQuery("");
-    setSelectedTool("");
-    setSelectedType("");
-    setSortOrder("recently_updated");
-    setSelectedCategory(null);
-    showToast("Filters reset", "info");
-  };
-
-  // Save new Quick Saved prompt
-  const handleSavePrompt = async (payload: {
-    title: string;
-    description: string;
-    content: string;
-    type: string;
-    tool: string;
-    visibility: 'private' | 'public';
-    tags: string[];
-  }) => {
+  const handleSignInSuccess = async () => {
     try {
-      const response = await fetch("/api/prompts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to post prompt");
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const user = await response.json();
+        setCurrentUser(user);
+        fetchPromptsData();
       }
-
-      const newPrompt = await response.json();
-      showToast("💾 Saved new prompt into Library successfully!");
-      fetchPromptsData();
-    } catch (error) {
-      console.error("Error committing quick save prompt", error);
-      throw error;
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  // Favorite toggle trigger
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+      setCurrentUser(null);
+      setSelectedScope('all');
+      setSelectedCategory(null);
+      setSelectedTool(null);
+      fetchPromptsData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleToggleFavorite = async (id: string) => {
     try {
-      const response = await fetch("/api/prompts/toggle-favorite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const stateMessage = data.is_favorite 
-          ? "⭐ Added to Favorites list" 
-          : "Removed from Favorites list";
-        showToast(stateMessage);
-        
-        // Record favored event
-        if (data.is_favorite) {
-          fetch("/api/prompts/record-event", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, eventType: "favorite" })
-          });
-        }
-        
-        fetchPromptsData();
+      const res = await fetch(`/api/prompts/${id}/favorite`, { method: 'POST' });
+      if (res.ok) {
+        // Optimistic update of favorite state
+        setPrompts(prev => prev.map(p => {
+          if (p.id === id) {
+            const isFav = !p.is_favorited;
+            return {
+              ...p,
+              is_favorited: isFav,
+              favorite_count: isFav ? (p.favorite_count || 0) + 1 : Math.max(0, (p.favorite_count || 1) - 1)
+            };
+          }
+          return p;
+        }));
       }
-    } catch (error) {
-      console.error("Error favoriting prompt:", error);
+    } catch (err) {
+      console.error('Failed to toggle favorite status', err);
     }
   };
 
-  // Visibility toggle (Publish / Private)
-  const handleToggleVisibility = async (id: string, currentVisibility: 'private' | 'public') => {
-    try {
-      const nextVis = currentVisibility === 'private' ? 'public' : 'private';
-      const response = await fetch("/api/prompts/toggle-visibility", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, visibility: nextVis })
-      });
+  const handleDeletePrompt = async (promptDelete: Prompt) => {
+    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบคำสั่ง "${promptDelete.title}" ออกจากคลัง AI?`)) {
+      return;
+    }
 
-      if (response.ok) {
-        const data = await response.json();
-        const visMessage = nextVis === "public"
-          ? "🔓 Published! Prompt is now Public to the organization."
-          : "🔒 Restricted! Prompt is now Private to you.";
-        showToast(visMessage);
-        
-        // Record publish event
-        if (nextVis === "public") {
-          fetch("/api/prompts/record-event", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, eventType: "publish" })
-          });
-        }
-        
+    try {
+      const res = await fetch(`/api/prompts/${promptDelete.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSelectedCategory(null);
         fetchPromptsData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'ลบข้อมูลคำสั่งล้มเหลว');
       }
-    } catch (error) {
-      console.error("Error setting visibility", error);
-    }
-  };
-
-  // Copy Action
-  const handleCopyAction = async (p: HydratedPrompt, substitutedContent?: string) => {
-    const textToCopy = substitutedContent || p.blocks.map(b => b.content).join("\n\n");
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      showToast("📋 Copied raw prompt text to Clipboard!");
-      
-      // Update counts via backend usage_events
-      await fetch("/api/prompts/record-event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: p.id, eventType: "copy" })
-      });
-      fetchPromptsData();
     } catch (err) {
-      console.error("Failed to copy", err);
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการลบข้อมูลคำสั่ง');
     }
   };
 
-  // Use Template action: Substitute {var} for [var], then copy
-  const handleUseTemplate = async (p: HydratedPrompt, substitutedContent?: string) => {
-    let content = substitutedContent;
-    if (!content) {
-      content = p.blocks.map(b => b.content).join("\n\n");
-      // Replace unused variables with fallback
-      p.variables.forEach(v => {
-        content = content!.replace(new RegExp(`\\{${v.name}\\}`, 'g'), `[${v.name}]`);
-      });
-    }
-
-    try {
-      await navigator.clipboard.writeText(content);
-      showToast("🚀 Templated Prompt copied to clipboard! Paste directly in AI chat.");
-      
-      // Update usage events counts
-      await fetch("/api/prompts/record-event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: p.id, eventType: "use_template" })
-      });
-      fetchPromptsData();
-    } catch (err) {
-      console.error("Failed to copy template", err);
-    }
+  const handleUseTemplate = (promptUse: Prompt) => {
+    setActiveUsePrompt(promptUse);
+    setIsUseTemplateOpen(true);
   };
+
+  const handleEditPrompt = (promptEdit: Prompt) => {
+    setActiveEditPrompt(promptEdit);
+    setIsPromptOpen(true);
+  };
+
+  const handleAddPromptClick = () => {
+    setActiveEditPrompt(null);
+    setIsPromptOpen(true);
+  };
+
+  // Compute stat counters for quick informational bento-cards at top
+  const countStats = {
+    total: prompts.length,
+    public: prompts.filter(p => p.visibility === 'public').length,
+    private: prompts.filter(p => p.visibility === 'private').length,
+    favorites: prompts.filter(p => p.is_favorited).length
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 gap-4">
+        {/* Render 100% authentic Logo with full typography underneath */}
+        <LogoIcon size={120} withText={true} className="animate-pulse mb-2" />
+        
+        <div className="flex items-center gap-2 mt-2">
+          <svg className="animate-spin h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <span className="text-xs text-slate-500 font-semibold tracking-wide">กำลังเตรียมพอร์ทัล Your Prompt...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex bg-slate-100 min-h-screen text-slate-800 font-sans antialiased overflow-hidden">
-      {/* Sidebar navigation */}
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar - fixed and standalone navigation Filter Panel */}
       <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        currentUser={currentUser}
         categories={categories}
+        tools={tools}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedScope={selectedScope}
+        setSelectedScope={setSelectedScope}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
-        user={currentUser}
+        selectedTool={selectedTool}
+        setSelectedTool={setSelectedTool}
+        onAddPrompt={handleAddPromptClick}
+        onSignIn={() => setIsSignInOpen(true)}
+        onSignOut={handleSignOut}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header toolbar */}
-        <Header
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedTool={selectedTool}
-          setSelectedTool={setSelectedTool}
-          selectedType={selectedType}
-          setSelectedType={setSelectedType}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          tools={tools}
-          onOpenQuickSave={() => setIsQuickSaveOpen(true)}
-          onResetFilters={resetFilters}
-        />
+      {/* Main Panel Area - shifted right to stand parallel with sidebar */}
+      <main className="flex-1 min-w-0 pl-80 bg-slate-50 min-h-screen p-8 flex flex-col">
+        {/* Core Header Banner with stats metrics */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <span className="text-[10px] text-purple-600 font-bold uppercase tracking-widest block mb-1">
+              Your AI Prompt Portal & Personal Workspace
+            </span>
+            <h2 className="text-2xl font-black tracking-tight leading-none outfit flex items-center gap-1.5">
+              <span className="text-[#131024]">YOUR</span>
+              <span className="text-[#7c3aed]">PROMPT</span>
+              <span className="text-slate-805 font-semibold text-lg ml-0.5">LIBRARY</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-1 font-medium">
+              ศูนย์รวมและจัดเก็บโครงร่างคำสั่ง AI ส่วนบุคคลอย่างสร้างสรรค์ ตรวจทาน รวบรวม และประยุกต์ใช้เพื่อเพิ่มประสิทธิภาพการทำงานสูงสุด
+            </p>
+          </div>
 
-        {/* Inner Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Prompts list */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            
-            {prompts.length === 0 ? (
-              <div id="empty-state" className="flex flex-col items-center justify-center p-12 bg-white rounded-lg border border-slate-200 text-center space-y-3 shadow-xs">
-                <AlertCircle className="w-10 h-10 text-slate-300" />
-                <h4 className="font-semibold text-slate-700 text-sm">ไม่พบข้อมูล Prompt</h4>
-                <p className="text-xs text-slate-500 max-w-md leading-relaxed">
-                  ไม่พบรายการ Prompt สะสมที่สอดคล้องกับตัวเลือกการสืบค้นของคุณ ลองเริ่มสร้างขึ้นใหม่ด้วยการกด <b className="text-purple-700">Quick Save</b>
-                </p>
-                <div className="pt-2">
-                  <button
-                    onClick={resetFilters}
-                    className="px-4 py-2 border border-slate-200 rounded-md text-xs font-semibold hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
-                  >
-                    Clear Search & Filters
-                  </button>
-                </div>
-              </div>
-            ) : viewMode === 'card' ? (
-              /* Grid Layout of prompt cards */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {prompts.map((p) => (
-                  <PromptCard
-                    key={p.id}
-                    prompt={p}
-                    isSelected={selectedPrompt?.id === p.id}
-                    onSelect={() => setSelectedPrompt(p)}
-                    onFavorite={() => handleToggleFavorite(p.id)}
-                    onCopyAction={handleCopyAction}
-                    onUseTemplate={handleUseTemplate}
-                  />
-                ))}
-              </div>
-            ) : (
-              /* Table list layout */
-              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold">
-                      <th className="p-3">Title & Tool</th>
-                      <th className="p-3 hidden sm:table-cell">Type</th>
-                      <th className="p-3">Visibility</th>
-                      <th className="p-3 hidden md:table-cell">Usage Info</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {prompts.map((p) => {
-                      const isSelected = selectedPrompt?.id === p.id;
-                      return (
-                        <tr 
-                          key={p.id} 
-                          id={`prompt-row-${p.id}`}
-                          onClick={() => setSelectedPrompt(p)}
-                          className={`border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${
-                            isSelected ? "bg-purple-50/30 font-medium" : ""
-                          }`}
-                        >
-                          <td className="p-3">
-                            <div className="font-bold text-slate-800 truncate max-w-[240px]">
-                              {p.title}
-                            </div>
-                            <div className="text-[10px] text-slate-500 flex items-center space-x-1.5 mt-0.5">
-                              {p.primary_tool && (
-                                <span className="bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded font-semibold text-[9px]">
-                                  {p.primary_tool.name}
-                                </span>
-                              )}
-                              <span>By: {p.owner?.display_name || "PEA"}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 hidden sm:table-cell capitalize text-slate-600">
-                            {p.blocks[0]?.block_type || "User Prompt"}
-                          </td>
-                          <td className="p-3">
-                            {p.visibility === "public" ? (
-                              <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[9px] font-bold border border-amber-200 uppercase">
-                                Public
-                              </span>
-                            ) : (
-                              <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[9px] font-bold border border-purple-200 uppercase">
-                                Private
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 hidden md:table-cell text-slate-500 font-mono text-[10px]">
-                            {p.usage_count} uses • {p.copy_count} copies
-                          </td>
-                          <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="inline-flex space-x-1">
-                              <button
-                                id={`btn-copy-tbl-${p.id}`}
-                                onClick={() => handleCopyAction(p)}
-                                className="p-1.5 bg-slate-100 rounded text-slate-600 hover:bg-purple-700 hover:text-white transition-all cursor-pointer"
-                                title="Copy prompt text"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                id={`btn-use-tbl-${p.id}`}
-                                onClick={() => handleUseTemplate(p)}
-                                className="p-1.5 bg-slate-100 rounded text-slate-600 hover:bg-indigo-600 hover:text-white transition-all cursor-pointer"
-                                title="Use Template (copy variables parsed)"
-                              >
-                                <Zap className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => fetchPromptsData()}
+              title="ดึงข้อมูลอัปเดต"
+              className="p-2 border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 rounded-xl transition-all"
+            >
+              <RefreshCw className={`w-4 h-4 text-slate-600 ${promptLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </header>
+
+        {/* Informational Stats Bento Grid Row */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden group">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">คำสั่งที่ประมวลผลได้</span>
+            <div className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+              {countStats.total}
+            </div>
+            <div className="absolute top-0 right-0 h-1.5 w-12 bg-purple-500/15"></div>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Public (แชร์ร่วม)</span>
+            <div className="text-2xl font-black text-emerald-600 tracking-tight leading-none">
+              {countStats.public}
+            </div>
+            <div className="absolute top-0 right-0 h-1.5 w-12 bg-emerald-500/15"></div>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Private (ความจุส่วนตัว)</span>
+            <div className="text-2xl font-black text-amber-500 tracking-tight leading-none">
+              {currentUser ? countStats.private : 'ล๊อค'}
+            </div>
+            <div className="absolute top-0 right-0 h-1.5 w-12 bg-amber-500/15"></div>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">รายการโปรด</span>
+            <div className="text-2xl font-black text-amber-400 tracking-tight leading-none">
+              {currentUser ? countStats.favorites : 'ล๊อค'}
+            </div>
+            <div className="absolute top-0 right-0 h-1.5 w-12 bg-yellow-500/15"></div>
+          </div>
+        </section>
+
+        {/* Selected filters block tags feedback */}
+        {(selectedCategory || selectedTool || selectedScope !== 'all') && (
+          <div className="flex items-center flex-wrap gap-2 mb-6 text-xs bg-slate-100/60 p-3 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-1.5 text-slate-400 font-bold shrink-0">
+              <Filter className="w-3.5 h-3.5" />
+              <span>ตัวกรองที่เลือก:</span>
+            </div>
+
+            {selectedScope !== 'all' && (
+              <span className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 text-[10px]">
+                คลัง: <span className="uppercase">{selectedScope}</span>
+                <button onClick={() => setSelectedScope('all')} className="hover:text-purple-900 font-black ml-1">×</button>
+              </span>
+            )}
+
+            {selectedCategory && (
+              <span className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 text-[10px]">
+                หมวด: {categories.find(c => c.id === selectedCategory)?.name || 'กำลังดึง...'}
+                <button onClick={() => setSelectedCategory(null)} className="hover:text-purple-900 font-black ml-1">×</button>
+              </span>
+            )}
+
+            {selectedTool && (
+              <span className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 text-[10px]">
+                Target AI: {tools.find(t => t.id === selectedTool)?.name || 'กำลังดึง...'}
+                <button onClick={() => setSelectedTool(null)} className="hover:text-purple-900 font-black ml-1">×</button>
+              </span>
             )}
           </div>
+        )}
 
-          {/* Right hand drawer / split block representing DetailPanel */}
-          <div className="w-96 xl:w-112 shrink-0 border-l border-slate-200 h-full bg-white hidden lg:block">
-            <DetailPanel
-              prompt={selectedPrompt}
-              onClose={() => setSelectedPrompt(null)}
-              onToggleVisibility={handleToggleVisibility}
-              onFavorite={handleToggleFavorite}
-              onCopyAction={handleCopyAction}
-              onUseTemplate={handleUseTemplate}
-            />
+        {/* Error Alert Display block */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs flex gap-2.5 mb-6 items-start font-medium">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="font-bold">{error}</p>
+              <button 
+                onClick={() => setError(null)}
+                className="mt-2 text-[10px] uppercase font-bold tracking-wide outline-none text-red-700 hover:underline"
+              >
+                เข้าใจและข้ามรอยนี้
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Main Grid View list of cards */}
+        {promptLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-450 gap-3 border border-slate-100 border-dashed rounded-3xl bg-white">
+            <svg className="animate-spin h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span className="text-xs font-semibold">กำลังกรองและประมวลผลคำสั่งทั้งหมด...</span>
+          </div>
+        ) : prompts.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 gap-4 border border-slate-100 border-dashed bg-white rounded-3xl" style={{ minHeight: '18rem' }}>
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-350">
+              <Compass className="w-6 h-6" />
+            </div>
+            <div className="text-center max-w-sm">
+              <h4 className="font-bold text-slate-700 text-sm">ไม่พบข้อความโครงร่างคำสั่งในเงื่อนไขการหา</h4>
+              <p className="text-[11px] text-slate-450 mt-1 leading-relaxed">
+                กรุณาลองล้างตัวกรอง เปลี่ยนเงื่อนไขการกรอง หรือสร้างเอกสารคำสั่งตัวแทนของฝ่ายคุณขึ้นใช้งานร่วมกันได้ทันที
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+            {prompts.map((prompt) => (
+              <PromptCard
+                key={prompt.id}
+                prompt={prompt}
+                currentUser={currentUser}
+                onUseTemplate={handleUseTemplate}
+                onEditPrompt={handleEditPrompt}
+                onDeletePrompt={handleDeletePrompt}
+                onToggleFavorite={handleToggleFavorite}
+                onTriggerSignIn={() => setIsSignInOpen(true)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Corporate Legal Footer */}
+        <footer className="mt-auto pt-12 text-center text-[10px] text-slate-400 font-medium tracking-wide flex items-center justify-center gap-2 border-t border-slate-100">
+          <span>⚡</span>
+          <span>© 2026 Your Prompt Library Workspace</span>
+          <span>•</span>
+          <span>คลังจัดเก็บและพัฒนาชุดคำสั่งเพื่อเพิ่มประสิทธิภาพและเสถียรภาพในการทำงาน</span>
+        </footer>
+
+        {/* Floating Modals rendering panels */}
+        <SignInModal
+          isOpen={isSignInOpen}
+          onClose={() => setIsSignInOpen(false)}
+          onSuccess={handleSignInSuccess}
+        />
+
+        <UseTemplateModal
+          prompt={activeUsePrompt}
+          isOpen={isUseTemplateOpen}
+          onClose={() => setIsUseTemplateOpen(false)}
+        />
+
+        <PromptModal
+          isOpen={isPromptOpen}
+          onClose={() => setIsPromptOpen(false)}
+          prompt={activeEditPrompt}
+          categories={categories}
+          tools={tools}
+          onSave={fetchPromptsData}
+        />
       </main>
-
-      {/* Floating details pane for Mobile displays */}
-      {selectedPrompt && (
-        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSelectedPrompt(null)}>
-          <div className="absolute right-0 top-0 bottom-0 max-w-sm w-full bg-white z-50 flex shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <DetailPanel
-              prompt={selectedPrompt}
-              onClose={() => setSelectedPrompt(null)}
-              onToggleVisibility={handleToggleVisibility}
-              onFavorite={handleToggleFavorite}
-              onCopyAction={handleCopyAction}
-              onUseTemplate={handleUseTemplate}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Quick save modal drawer */}
-      <QuickSaveDrawer
-        isOpen={isQuickSaveOpen}
-        onClose={() => setIsQuickSaveOpen(false)}
-        tools={tools}
-        onSave={handleSavePrompt}
-      />
-
-      {/* Toast Feedbacks */}
-      {toastMessage && (
-        <div 
-          id="toast-notification"
-          className="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-800 text-white rounded-lg p-3 shadow-2xl max-w-sm flex items-center space-x-2 text-xs transition-opacity duration-300"
-        >
-          <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-          <p className="font-medium text-[11px] leading-tight">{toastMessage}</p>
-        </div>
-      )}
     </div>
   );
 }
