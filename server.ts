@@ -11,10 +11,26 @@ const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:STNP
 
 const CANDIDATE_STRINGS = [
   process.env.DATABASE_URL,
+  // Singapore (ap-southeast-1) - Highly probable for Southeast Asia
   'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres',
   'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres',
+  // Tokyo (ap-northeast-1)
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres',
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres',
+  // Sydney (ap-southeast-2)
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres',
+  // Mumbai (ap-south-1)
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-south-1.pooler.supabase.com:6543/postgres',
+  // US East - N. Virginia (us-east-1)
   'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-us-east-1.pooler.supabase.com:6543/postgres',
   'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-us-east-1.pooler.supabase.com:5432/postgres',
+  // US West - Oregon (us-west-2)
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-us-west-2.pooler.supabase.com:6543/postgres',
+  // Frankfurt (eu-central-1)
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-eu-central-1.pooler.supabase.com:6543/postgres',
+  // Ireland (eu-west-1)
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-eu-west-1.pooler.supabase.com:6543/postgres',
+  // Original direct URL
   'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres'
 ].filter(Boolean) as string[];
 
