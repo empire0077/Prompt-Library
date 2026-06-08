@@ -2,15 +2,15 @@ import express from 'express';
 import 'dotenv/config';
 import path from 'path';
 import postgres from 'postgres';
-// @ts-ignore
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
 
 // Environment parameters setup
 const PORT = 3000;
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres';
+const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
 const sql = postgres(connectionString, {
-  ssl: connectionString.includes('supabase.co') ? 'require' : undefined
+  ssl: isLocal ? undefined : 'require'
 });
 
 const app = express();
