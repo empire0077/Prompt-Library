@@ -1,7 +1,6 @@
 import express from 'express';
 import 'dotenv/config';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import postgres from 'postgres';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
@@ -9,9 +8,13 @@ import fs from 'fs';
 // Environment parameters setup
 const PORT = 3000;
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres';
-const sql = postgres(connectionString);
+const sql = postgres(connectionString, {
+  ssl: connectionString.includes('supabase.co') ? 'require' : undefined
+});
 
 const app = express();
+
+app.set('trust proxy', true);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -670,6 +673,7 @@ app.use(cookieParser());
   // === VITE CONFIG / PRODUCTION ASSETS SERVING MIDDLEWARE ===
   async function setupVite() {
     if (process.env.NODE_ENV !== 'production') {
+      const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa'
