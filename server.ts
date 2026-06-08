@@ -8,10 +8,78 @@ import fs from 'fs';
 // Environment parameters setup
 const PORT = 3000;
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres';
-const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
-const sql = postgres(connectionString, {
-  ssl: isLocal ? undefined : { rejectUnauthorized: false }
+
+const CANDIDATE_STRINGS = [
+  process.env.DATABASE_URL,
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres',
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres',
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-us-east-1.pooler.supabase.com:6543/postgres',
+  'postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-us-east-1.pooler.supabase.com:5432/postgres',
+  'postgresql://postgres:STNPawkB5xngiTen@db.hlybhumzqmvvtdwrzdat.supabase.co:5432/postgres'
+].filter(Boolean) as string[];
+
+let activeSql: any = null;
+let activeConnectionStringUsed: string = '';
+
+async function ensureConnected(): Promise<any> {
+  if (activeSql) return activeSql;
+
+  console.log('Resolving Supabase Connection...');
+  for (const connStr of CANDIDATE_STRINGS) {
+    const parsedIsLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
+    const tempSql = postgres(connStr, {
+      ssl: parsedIsLocal ? undefined : { rejectUnauthorized: false },
+      connect_timeout: 5
+    });
+
+    try {
+      await tempSql`SELECT 1`;
+      console.log(`Successfully connected using connection string format: ${connStr.replace(/:[^:@\s]+@/, ':***@')}`);
+      activeSql = tempSql;
+      activeConnectionStringUsed = connStr;
+      return activeSql;
+    } catch (err: any) {
+      console.warn(`Connection attempt failed for: ${connStr.replace(/:[^:@\s]+@/, ':***@')}. Error: ${err.message || err}`);
+      try {
+        await tempSql.end();
+      } catch (e) {}
+    }
+  }
+
+  throw new Error('All candidate connection attempts to Supabase failed. Please check database status or custom DATABASE_URL.');
+}
+
+const sqlProxy = new Proxy(() => {}, {
+  apply: async (target, thisArg, argumentsList) => {
+    const db = await ensureConnected();
+    return db(...argumentsList);
+  },
+  get: (target, prop) => {
+    if (prop === 'begin') {
+      return async (...args: any[]) => {
+        const db = await ensureConnected();
+        return db.begin(...args);
+      };
+    }
+    if (prop === 'end') {
+      return async (...args: any[]) => {
+        if (activeSql) {
+          return activeSql.end(...args);
+        }
+      };
+    }
+    return async (...args: any[]) => {
+      const db = await ensureConnected();
+      const fn = db[prop];
+      if (typeof fn === 'function') {
+        return fn.bind(db)(...args);
+      }
+      return fn;
+    };
+  }
 });
+
+const sql = sqlProxy as unknown as ReturnType<typeof postgres>;
 
 const app = express();
 
