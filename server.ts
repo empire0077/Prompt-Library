@@ -2,6 +2,7 @@ import express from 'express';
 import 'dotenv/config';
 import path from 'path';
 import postgres from 'postgres';
+// @ts-ignore
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
 
