@@ -1,226 +1,198 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { 
-  Copy, 
-  Settings, 
-  Layers, 
-  Star, 
-  ExternalLink,
-  ChevronRight,
-  User,
-  Zap,
-  Check
-} from "lucide-react";
-import { motion } from "motion/react";
-import { HydratedPrompt } from "../types";
+  Globe, Lock, Star, Copy, Zap, PenTool, Trash2, Check,
+  Eye, FileText, Settings, Award
+} from 'lucide-react';
+import { Prompt, User } from '../types';
 
 interface PromptCardProps {
-  key?: string | number | React.Key;
-  prompt: HydratedPrompt;
-  isSelected: boolean;
-  onSelect: () => void;
-  onFavorite: () => void;
-  onCopyAction: (p: HydratedPrompt, substitutedContent?: string) => void;
-  onUseTemplate: (p: HydratedPrompt, substitutedContent?: string) => void;
+  prompt: Prompt;
+  currentUser: User | null;
+  onUseTemplate: (p: Prompt) => void;
+  onEditPrompt: (p: Prompt) => void;
+  onDeletePrompt: (p: Prompt) => void;
+  onToggleFavorite: (id: string) => void;
+  onTriggerSignIn: () => void;
 }
 
 export default function PromptCard({
   prompt,
-  isSelected,
-  onSelect,
-  onFavorite,
-  onCopyAction,
-  onUseTemplate
+  currentUser,
+  onUseTemplate,
+  onEditPrompt,
+  onDeletePrompt,
+  onToggleFavorite,
+  onTriggerSignIn
 }: PromptCardProps) {
   const [copied, setCopied] = useState(false);
-  const [used, setUsed] = useState(false);
 
-  const handleCopy = (e: React.MouseEvent) => {
+  // Check permissions (either admin or owner of the prompt)
+  const isAuthorizedToEdit = currentUser && (
+    currentUser.role === 'admin' || currentUser.id === prompt.owner_user_id
+  );
+
+  const handleCopyRaw = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    onCopyAction(prompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    try {
+      const res = await fetch(`/api/prompts/${prompt.id}/raw`);
+      if (!res.ok) throw new Error('Failed to get raw prompt template');
+      const { rawContent } = await res.json();
+      
+      await navigator.clipboard.writeText(rawContent || '');
+      setCopied(true);
+      
+      // Increment copy counts
+      fetch(`/api/prompts/${prompt.id}/copy`, { method: 'POST' }).catch(err => console.error(err));
+      prompt.copy_count = (prompt.copy_count || 0) + 1;
 
-  const handleUse = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onUseTemplate(prompt);
-    setUsed(true);
-    setTimeout(() => setUsed(false), 2000);
-  };
-
-  // Select tool colors beautifully
-  const getToolStyles = (slug?: string) => {
-    switch (slug) {
-      case "chatgpt":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "claude":
-        return "bg-amber-50 text-amber-800 border-amber-200";
-      case "gemini":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "notebooklm":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "codex":
-        return "bg-slate-100 text-slate-800 border-slate-300";
-      default:
-        return "bg-indigo-50 text-indigo-700 border-indigo-200";
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const getTagColorClass = (color?: string) => {
-    switch (color) {
-      case "purple": return "bg-purple-50 text-purple-700 border-purple-100";
-      case "blue": return "bg-blue-50 text-blue-700 border-blue-100";
-      case "amber": return "bg-amber-50 text-amber-700 border-amber-100";
-      case "teal": return "bg-teal-50 text-teal-700 border-teal-100";
-      case "indigo": return "bg-indigo-50 text-indigo-700 border-indigo-100";
-      case "cyan": return "bg-cyan-50 text-cyan-700 border-cyan-100";
-      default: return "bg-slate-50 text-slate-600 border-slate-100";
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUser) {
+      onTriggerSignIn();
+      return;
     }
+    onToggleFavorite(prompt.id);
   };
 
   return (
-    <motion.div
-      id={`prompt-card-${prompt.id}`}
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      onClick={onSelect}
-      className={`border rounded-lg p-4 bg-white transition-all duration-150 cursor-pointer flex flex-col justify-between relative shadow-sm hover:translate-y-[-2px] ${
-        isSelected 
-          ? "border-purple-600 bg-purple-50/20 ring-1 ring-purple-600" 
-          : "border-slate-200 hover:border-slate-300 hover:shadow"
-      }`}
-    >
-      <div className="space-y-3">
-        {/* Top bar: Visibility status badge and tools indicator */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1.5">
-            {prompt.visibility === "public" ? (
-              <span id={`badge-public-${prompt.id}`} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 uppercase">
-                Public
-              </span>
-            ) : (
-              <span id={`badge-private-${prompt.id}`} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase">
-                Private
-              </span>
-            )}
-
-            <span className="text-[10px] bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded border border-slate-200 capitalize">
-              {prompt.blocks[0]?.block_type || "User Prompt"}
+    <div id={`prompt-card-${prompt.id}`} className="bg-white rounded-2xl border border-slate-100 hover:border-purple-200 hover:shadow-lg transition-all p-5 flex flex-col justify-between group relative overflow-hidden">
+      
+      {/* Visibility Corner Indicator Banner */}
+      <div className="absolute top-0 right-0 h-1.5 w-16 bg-purple-500/10"></div>
+      
+      <div>
+        {/* Card Header metadata */}
+        <div className="flex items-center justify-between text-[10px] mb-3">
+          <div className="flex items-center gap-1.5 overflow-hidden pr-2">
+            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-semibold border border-purple-100 truncate">
+              {prompt.category_name || 'หมวดพนักงาน'}
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 font-medium border border-slate-200 truncate font-mono">
+              {prompt.tool_name || 'โมเดลอิสระ'}
             </span>
           </div>
 
-          <div className="flex items-center space-x-1">
-            {/* Tool indicator */}
-            {prompt.primary_tool && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${getToolStyles(prompt.primary_tool.slug)}`}>
-                {prompt.primary_tool.name}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {prompt.visibility === 'private' ? (
+              <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 border border-amber-200 font-semibold">
+                <Lock className="w-3 h-3" />
+                <span>ส่วนตัว</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200 font-semibold">
+                <Globe className="w-3 h-3" />
+                <span>สาธารณะ</span>
               </span>
             )}
-            
-            {/* Favorite button */}
-            <button
-              id={`btn-fav-${prompt.id}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onFavorite();
-              }}
-              className={`p-1 rounded hover:bg-slate-100 transition-colors ${
-                prompt.is_favorite ? "text-amber-500" : "text-slate-300 hover:text-slate-400"
-              }`}
-              title="Add to Favorites"
-            >
-              <Star className="w-4 h-4 fill-current" />
-            </button>
           </div>
         </div>
 
-        {/* Title and Description */}
-        <div>
-          <h3 className="font-bold text-sm text-slate-800 leading-snug line-clamp-2 hover:text-purple-800">
-            {prompt.title}
-          </h3>
-          <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-            {prompt.description}
-          </p>
-        </div>
+        {/* Title */}
+        <h3 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-purple-700 transition-colors mb-2 line-clamp-2">
+          {prompt.title}
+        </h3>
 
-        {/* Tags row */}
-        {prompt.tags && prompt.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {prompt.tags.map((tag) => (
-              <span 
-                key={tag.id} 
-                className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${getTagColorClass(tag.color)}`}
-              >
-                #{tag.name}
-              </span>
-            ))}
+        {/* Description */}
+        <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-3 font-normal" style={{ minHeight: '3.5rem' }}>
+          {prompt.description || 'ไม่มีคำอธิบายสำหรับคำสั่งนี้'}
+        </p>
+
+        {/* Author Badge */}
+        {prompt.owner_name && (
+          <div className="flex items-center gap-1.5 mb-4 text-[10px] text-slate-400 font-medium">
+            <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-[8px] uppercase shrink-0">
+              {prompt.owner_name.slice(0, 1)}
+            </div>
+            <span>แชร์โดย: {prompt.owner_name}</span>
           </div>
         )}
       </div>
 
-      {/* Footer bar: Metrics, author, and speedy triggers */}
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-        {/* Owner & Metrics info */}
-        <div className="flex flex-col min-w-0">
-          <span className="text-[9px] text-slate-400 flex items-center space-x-1">
-            <User className="w-2.5 h-2.5" />
-            <span className="truncate max-w-[90px] font-medium">{prompt.owner?.display_name || "PEA Admin"}</span>
-          </span>
-          <span className="text-[9px] text-slate-400 mt-0.5 font-mono">
-            {prompt.usage_count} uses • {prompt.copy_count} copies
-          </span>
+      <div>
+        {/* Interaction Statistics Row */}
+        <div className="flex items-center gap-3 border-t border-slate-50 pt-3.5 mb-4 text-[10px] text-slate-400 font-semibold">
+          <div className="flex items-center gap-1">
+            <Eye className="w-3.5 h-3.5 text-slate-350" />
+            <span>ใช้งาน {prompt.usage_count || 0}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FileText className="w-3.5 h-3.5 text-slate-350" />
+            <span>คัดลอก {prompt.copy_count || 0}</span>
+          </div>
+          
+          <button 
+            onClick={handleFavoriteClick}
+            className="flex items-center gap-1 hover:text-amber-500 group/fav transition-colors ml-auto"
+          >
+            <Star className={`w-3.5 h-3.5 ${
+              prompt.is_favorited 
+                ? 'text-amber-400 fill-amber-400' 
+                : 'text-slate-350 group-hover/fav:text-amber-400'
+            }`} />
+            <span>{prompt.favorite_count || 0}</span>
+          </button>
         </div>
 
-        {/* Small quick buttons */}
-        <div className="flex items-center space-x-1">
-          {/* Use Template button */}
+        {/* Dynamic Actions block */}
+        <div className="flex items-center gap-1.5 pt-1">
           <button
-            id={`btn-use-card-${prompt.id}`}
-            onClick={handleUse}
-            className={`cursor-pointer inline-flex items-center space-x-1 px-2.5 py-1 text-[10px] font-semibold border rounded transition-all ${
-              used 
-                ? "bg-emerald-50 border-emerald-300 text-emerald-800" 
-                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-xs"
-            }`}
-            title="Replace variables {x} with [x] and copy to clipboard"
+            onClick={() => onUseTemplate(prompt)}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-purple-55 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-700 font-semibold py-2 px-3 rounded-xl text-xs transition-all"
           >
-            {used ? <Check className="w-3 h-3" /> : <Zap className="w-3 h-3 text-purple-600" />}
-            <span>{used ? "Loaded!" : "Use"}</span>
+            <Zap className="w-3.5 h-3.5 fill-purple-600 text-purple-600" />
+            <span>ร่วมกรอก (Use Template)</span>
           </button>
 
-          {/* Copy Prompt button */}
           <button
-            id={`btn-copy-card-${prompt.id}`}
-            onClick={handleCopy}
-            className={`cursor-pointer inline-flex items-center space-x-1 px-2.5 py-1 text-[10px] font-semibold border rounded transition-all ${
+            onClick={handleCopyRaw}
+            title="ขัดลอกโครงร่างคำสั่งด่วน"
+            className={`px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
               copied 
-                ? "bg-emerald-50 border-emerald-300 text-emerald-800" 
-                : "bg-purple-700 hover:bg-purple-800 border-purple-800 text-white shadow-xs"
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             }`}
-            title="Copy prompt text as is"
           >
-            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-            <span>{copied ? "Copied" : "Copy"}</span>
+            {copied ? (
+              <Check className="w-4 h-4 mx-auto" />
+            ) : (
+              <Copy className="w-4 h-4 mx-auto" />
+            )}
           </button>
 
-          {/* Chevron details */}
-          <button 
-            id={`btn-details-${prompt.id}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect();
-            }}
-            className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded"
-            title="Open Details Panel"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {isAuthorizedToEdit && (
+            <div className="flex items-center gap-1 pl-1 border-l border-slate-100 shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditPrompt(prompt);
+                }}
+                title="แก้ไขข้อมูลคำสั่ง"
+                className="p-2 text-slate-400 hover:text-purple-600 hover:bg-slate-50 rounded-lg transition-all"
+              >
+                <PenTool className="w-3.5 h-3.5" />
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeletePrompt(prompt);
+                }}
+                title="ลบคำสั่ง"
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-lg transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </motion.div>
+
+    </div>
   );
 }

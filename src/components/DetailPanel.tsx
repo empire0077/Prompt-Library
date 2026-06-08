@@ -13,7 +13,7 @@ import {
   Calendar,
   AlertCircle
 } from "lucide-react";
-import { HydratedPrompt } from "../types";
+import { HydratedPrompt, PromptVariable, PromptBlock } from "../types";
 
 interface DetailPanelProps {
   prompt: HydratedPrompt | null;
@@ -40,7 +40,7 @@ export default function DetailPanel({
   useEffect(() => {
     if (prompt) {
       const initial: Record<string, string> = {};
-      prompt.variables.forEach(v => {
+      prompt.variables.forEach((v: PromptVariable) => {
         initial[v.name] = "";
       });
       setVariablesForm(initial);
@@ -65,12 +65,12 @@ export default function DetailPanel({
 
   // Get full combined text content from all blocks
   const getFullContent = () => {
-    return prompt.blocks.map(b => b.content).join("\n\n");
+    return prompt.blocks.map((b: PromptBlock) => b.content).join("\n\n");
   };
 
   const getSubstitutedContent = (useFallbackFormatInput = false) => {
     let text = getFullContent();
-    prompt.variables.forEach(v => {
+    prompt.variables.forEach((v: PromptVariable) => {
       const userVal = variablesForm[v.name];
       if (userVal && userVal.trim() !== "") {
         text = text.replace(new RegExp(`\\{${v.name}\\}`, 'g'), userVal);
@@ -202,7 +202,7 @@ export default function DetailPanel({
           </p>
           {prompt.tags && prompt.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {prompt.tags.map(tag => (
+              {prompt.tags.map((tag: any) => (
                 <span key={tag.id} className="text-[10px] font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors border border-purple-100 px-2.5 py-0.5 rounded-full">
                   #{tag.name}
                 </span>
@@ -221,7 +221,7 @@ export default function DetailPanel({
               <p className="text-[11px] text-slate-500 leading-relaxed border-b border-slate-100 pb-2">
                 กรอกข้อมูลลงในฟิลด์เหล่านี้เพื่อแทนค่าตัวแปรใน Prompt โค้ดด้านล่างแบบอัตโนมัติ
               </p>
-              {prompt.variables.map((variable) => (
+              {prompt.variables.map((variable: PromptVariable) => (
                 <div key={variable.id} className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-700 block flex items-center justify-between">
                     <span>{variable.label || variable.name}</span>

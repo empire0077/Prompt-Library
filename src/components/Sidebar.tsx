@@ -1,158 +1,337 @@
-import React from "react";
+import React from 'react';
 import { 
-  Layers, 
-  Lock, 
-  Globe, 
-  Star, 
-  BookOpen, 
-  ShoppingBag, 
-  Users, 
-  CreditCard, 
-  BarChart2, 
-  Presentation,
-  Cpu
-} from "lucide-react";
-import { DbCategory, DbUser } from "../types";
+  Plus, Search, Globe, Lock, Star, ChevronRight, BookOpen, 
+  Code, User, Edit3, Database, Tv, LogIn, LogOut, UserCheck
+} from 'lucide-react';
+import { User as UserType, PromptCategory, Tool } from '../types';
+import LogoIcon from './LogoIcon';
 
 interface SidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  categories: DbCategory[];
+  currentUser: UserType | null;
+  categories: PromptCategory[];
+  tools: Tool[];
+  
+  // States
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  
+  selectedScope: string; // 'all' | 'public' | 'private' | 'favorites'
+  setSelectedScope: (s: string) => void;
+  
   selectedCategory: string | null;
-  setSelectedCategory: (catSlug: string | null) => void;
-  user: DbUser | null;
+  setSelectedCategory: (c: string | null) => void;
+  
+  selectedTool: string | null;
+  setSelectedTool: (t: string | null) => void;
+
+  // Actions
+  onAddPrompt: () => void;
+  onSignIn: () => void;
+  onSignOut: () => void;
 }
 
 export default function Sidebar({
-  activeTab,
-  setActiveTab,
+  currentUser,
   categories,
+  tools,
+  searchQuery,
+  setSearchQuery,
+  selectedScope,
+  setSelectedScope,
   selectedCategory,
   setSelectedCategory,
-  user
+  selectedTool,
+  setSelectedTool,
+  onAddPrompt,
+  onSignIn,
+  onSignOut
 }: SidebarProps) {
-  
-  const getCategoryIcon = (iconName?: string) => {
+
+  // Map database icon string keys to Lucide React component elements
+  const renderCategoryIcon = (iconName: string | null) => {
     switch (iconName) {
-      case "credit-card": return <CreditCard className="w-4 h-4" />;
-      case "users": return <Users className="w-4 h-4" />;
-      case "shopping-bag": return <ShoppingBag className="w-4 h-4" />;
-      case "bar-chart-2": return <BarChart2 className="w-4 h-4" />;
-      case "presentation": return <Presentation className="w-4 h-4" />;
-      case "book-open": return <BookOpen className="w-4 h-4" />;
-      default: return <Layers className="w-4 h-4" />;
+      case 'user':
+        return <User className="w-4 h-4" />;
+      case 'edit':
+        return <Edit3 className="w-4 h-4" />;
+      case 'code':
+        return <Code className="w-4 h-4" />;
+      case 'database':
+        return <Database className="w-4 h-4" />;
+      case 'presentation':
+        return <Tv className="w-4 h-4" />;
+      case 'book-open':
+        return <BookOpen className="w-4 h-4" />;
+      default:
+        return <BookOpen className="w-4 h-4" />;
     }
   };
 
-  const navItems = [
-    { id: "all", label: "All Prompts", icon: <Layers className="w-4 h-4" /> },
-    { id: "private", label: "Private", icon: <Lock className="w-4 h-4" /> },
-    { id: "public", label: "Public", icon: <Globe className="w-4 h-4" /> },
-    { id: "favorites", label: "Favorites", icon: <Star className="w-4 h-4" /> },
-  ];
-
   return (
-    <aside id="sidebar-nav" className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0 shrink-0">
+    <div id="app-sidebar" className="w-80 shrink-0 bg-white border-r border-slate-200 flex flex-col h-screen fixed top-0 left-0 z-20">
       {/* Brand Header */}
-      <div className="p-4 border-b border-slate-100 flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-md bg-purple-700 flex items-center justify-center text-white font-bold text-lg shadow-sm border border-purple-800">
-          P
-        </div>
-        <div>
-          <h1 className="font-bold text-sm text-slate-800 leading-tight">PEA Prompt</h1>
-          <p className="text-[10px] text-amber-600 font-semibold uppercase tracking-wider">Enterprise Hub</p>
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <LogoIcon size={38} className="shrink-0" />
+          <div>
+            <h1 className="font-extrabold text-sm tracking-tight leading-none outfit font-sans flex items-center gap-1">
+              <span className="text-[#131024]">Your</span>
+              <span className="text-[#7c3aed]">Prompt</span>
+            </h1>
+            <span className="text-[10px] text-slate-450 font-bold uppercase tracking-wider mt-1 block">
+              Personal Workspace
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        <div className="text-[10px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wider">
-          Library Filter
+      {/* Main Navigation Scroll Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="ค้นหาโครงสร้างคำสั่ง..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder-slate-400 text-slate-700"
+          />
         </div>
-        {navItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              id={`nav-tab-${item.id}`}
-              onClick={() => {
-                setActiveTab(item.id);
-                setSelectedCategory(null); // Clear category filter when changing active tab
-              }}
-              className={`w-full flex items-center space-x-2.5 px-3 py-2 text-xs font-medium rounded-md transition-colors ${
-                isActive
-                  ? "bg-purple-50 text-purple-800 border-l-2 border-purple-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+
+        {/* Add New Prompt Action */}
+        {currentUser && (
+          <button
+            onClick={onAddPrompt}
+            className="w-full flex items-center justify-center gap-2 pea-gradient text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-md shadow-purple-500/10 hover:shadow-purple-500/20 hover:scale-[1.01] active:scale-100 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>สร้าง Prompt ของคุณ</span>
+          </button>
+        )}
+
+        {/* Main Filters: Scopes */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 block mb-2">
+            หมวดการเข้าถึง (Scope)
+          </span>
+          
+          <button
+            onClick={() => setSelectedScope('all')}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              selectedScope === 'all'
+                ? 'bg-purple-50 text-purple-700 font-semibold'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Globe className="w-4 h-4 text-slate-400 shrink-0" />
+              <span>ทั้งหมด</span>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+          </button>
+
+          <button
+            onClick={() => setSelectedScope('public')}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              selectedScope === 'public'
+                ? 'bg-purple-50 text-purple-700 font-semibold'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>Public (คลังสาธารณะ)</span>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+          </button>
+
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                onSignIn();
+                return;
+              }
+              setSelectedScope('private');
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              selectedScope === 'private'
+                ? 'bg-purple-50 text-purple-700 font-semibold'
+                : 'text-slate-600 hover:bg-slate-50'
+            } ${!currentUser ? 'opacity-60' : ''}`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Private ({currentUser ? 'คลังส่วนตัวของคุณ' : 'คลังส่วนตัว'})</span>
+            </div>
+            {!currentUser && (
+              <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                Lock
+              </span>
+            )}
+            {currentUser && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}
+          </button>
+
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                onSignIn();
+                return;
+              }
+              setSelectedScope('favorites');
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              selectedScope === 'favorites'
+                ? 'bg-purple-50 text-purple-700 font-semibold'
+                : 'text-slate-600 hover:bg-slate-50'
+            } ${!currentUser ? 'opacity-60' : ''}`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
+              <span>รายการโปรดของคุณ</span>
+            </div>
+            {!currentUser && (
+              <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                Lock
+              </span>
+            )}
+            {currentUser && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}
+          </button>
+        </div>
 
         {/* Categories Section */}
-        <div className="pt-6">
-          <div className="text-[10px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wider flex items-center justify-between">
-            <span>Use Cases / Categories</span>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between px-2 mb-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              หมวดหมู่งานพนักงาน
+            </span>
             {selectedCategory && (
-              <button 
+              <button
                 onClick={() => setSelectedCategory(null)}
-                className="text-[9px] text-purple-700 hover:underline capitalize"
+                className="text-[9px] text-purple-600 hover:underline font-semibold"
               >
-                Clear
+                ล้างตัวเลือก
               </button>
             )}
           </div>
-          <div className="mt-1 space-y-0.5">
-            {categories.map((cat) => {
-              const matchesSelected = selectedCategory === cat.slug;
-              return (
-                <button
-                  key={cat.id}
-                  id={`cat-filter-${cat.slug}`}
-                  onClick={() => {
-                    setSelectedCategory(cat.slug as string);
-                    if (activeTab === "favorites" || activeTab === "private") {
-                      // Stay on those tabs, but filter by category
-                    } else {
-                      setActiveTab("all"); // Default to all if on specific tabs
-                    }
-                  }}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-1.5 text-xs font-normal rounded-md transition-colors text-left ${
-                    matchesSelected
-                      ? "bg-amber-50 text-amber-900 border-l-2 border-amber-500 font-medium"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <span className={matchesSelected ? "text-amber-600" : "text-slate-400"}>
-                    {getCategoryIcon(cat.icon)}
+
+          <div className="space-y-1">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  selectedCategory === cat.id
+                    ? 'bg-purple-55 bg-purple-100 text-purple-800 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 text-left leading-tight truncate">
+                  <span className={selectedCategory === cat.id ? 'text-purple-600 scale-105' : 'text-slate-400'}>
+                    {renderCategoryIcon(cat.icon)}
                   </span>
                   <span className="truncate">{cat.name}</span>
-                </button>
-              );
-            })}
+                </div>
+                {selectedCategory === cat.id && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0 ml-1"></span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
-      </nav>
 
-      {/* User profile footer */}
-      {user && (
-        <div className="p-3 border-t border-slate-100 bg-slate-50">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-full bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-700 font-bold text-xs uppercase shadow-inner">
-              {user.display_name.slice(0, 2)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-slate-800 truncate">{user.display_name}</p>
-              <p className="text-[10px] text-slate-500 truncate">{user.position || "PEA Employee"}</p>
-              <div className="inline-flex items-center space-x-1 mt-0.5 px-1 py-0.2 bg-purple-100 rounded text-[8px] font-bold text-purple-800">
-                <span>ID: {user.employee_id}</span>
+        {/* Tools Section */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between px-2 mb-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              โมเดลเป้าหมาย (AI Models)
+            </span>
+            {selectedTool && (
+              <button
+                onClick={() => setSelectedTool(null)}
+                className="text-[9px] text-purple-600 hover:underline font-semibold"
+              >
+                ล้างตัวเลือก
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 px-1">
+            {tools.map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => setSelectedTool(selectedTool === tool.id ? null : tool.id)}
+                className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg border transition-all ${
+                  selectedTool === tool.id
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {tool.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar Footer User Section */}
+      <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+        {currentUser ? (
+          <div>
+            <div className="flex items-start gap-2.5 mb-3">
+              {currentUser.avatar_url ? (
+                <img
+                  src={currentUser.avatar_url}
+                  alt={currentUser.display_name}
+                  className="w-[52px] h-[52px] rounded-xl object-cover shrink-0 border border-purple-200 shadow-sm"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-[52px] h-[52px] rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-base shrink-0 border border-purple-200 uppercase shadow-sm">
+                  {currentUser.display_name.slice(0, 2)}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 animate-fade-in">
+                  <span className="font-semibold text-slate-800 text-xs truncate">
+                    {currentUser.display_name}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase border bg-purple-100 text-purple-750 border-purple-200">
+                    {currentUser.role}
+                  </span>
+                </div>
+                <div className="text-[9px] text-slate-400 leading-normal truncate font-medium">
+                  {currentUser.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : (currentUser.position || 'ผู้ใช้งาน')}
+                </div>
+                <div className="text-[8px] text-slate-400 leading-tight font-mono truncate mt-0.5">
+                  {currentUser.email}
+                </div>
               </div>
             </div>
+            
+            <button
+              onClick={onSignOut}
+              className="w-full flex items-center justify-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 hover:text-red-650 active:bg-slate-100 font-medium text-[10px] text-slate-500 py-1.5 px-3 rounded-lg transition-all"
+            >
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <span>ออกจากระบบ</span>
+            </button>
           </div>
-        </div>
-      )}
-    </aside>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-[10px] text-slate-400 mb-2 leading-relaxed">
+              ล็อกอินเพื่อมีส่วนร่วมในการแชร์ และส่องดูคลังคำสั่งส่วนบุคคล
+            </p>
+            <button
+              onClick={onSignIn}
+              className="w-full flex items-center justify-center gap-2 pea-gradient text-white font-semibold text-xs py-2 px-4 rounded-xl shadow transition-all hover:-translate-y-0.5"
+            >
+              <LogIn className="w-4 h-4 shrink-0" />
+              <span>ลงชื่อเข้าใช้งาน</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
