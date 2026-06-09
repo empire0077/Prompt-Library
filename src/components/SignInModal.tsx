@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Sparkles, UserCheck, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import LogoIcon from './LogoIcon';
 
 interface SignInModalProps {
@@ -11,30 +11,6 @@ interface SignInModalProps {
 export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const demoUsers = [
-    {
-      name: 'ณวพัทธ์ สุขสำราญ',
-      email: 'nawapat@gmail.com',
-      role: 'Admin',
-      position: 'Senior IT Specialist',
-      color: 'bg-purple-100 text-purple-700 border-purple-200'
-    },
-    {
-      name: 'สมชาย ปลอดภัย',
-      email: 'somchai.p@promptlib.com',
-      role: 'Engineer (User)',
-      position: 'Electrical Engineer, Substation Division',
-      color: 'bg-blue-100 text-blue-700 border-blue-200'
-    },
-    {
-      name: 'วิลาวัลย์ สิริโภค',
-      email: 'wilawan.s@promptlib.com',
-      role: 'Procurement (User)',
-      position: 'Procurement Manager, Logistics Dept',
-      color: 'bg-green-100 text-green-700 border-green-200'
-    }
-  ];
 
   // Listener for successful Google OAuth
   useEffect(() => {
@@ -85,30 +61,6 @@ export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalP
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sign-In');
-      setLoading(false);
-    }
-  };
-
-  const handleDemoSignIn = async (email: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/auth/demo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        throw new Error('ลงชื่อเข้าใช้ด้วย Demo แอคเคานต์ล้มเหลว');
-      }
-
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบทดสอบ');
-    } finally {
       setLoading(false);
     }
   };
@@ -177,46 +129,6 @@ export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalP
             </svg>
             <span>ลงชื่อเข้าใช้ด้วยบัญชี Google</span>
           </button>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-100"></div>
-            </div>
-            <div className="relative flex justify-center text-xs text-slate-400 font-medium">
-              <span className="px-3 bg-white">หรือเข้าใช้เป็นผู้ทดสอบระบบ (Demo Mode)</span>
-            </div>
-          </div>
-
-          {/* Quick Demo User Accounts Selection */}
-          <div className="space-y-3">
-            {demoUsers.map((user) => (
-              <button
-                key={user.email}
-                onClick={() => handleDemoSignIn(user.email)}
-                disabled={loading}
-                className="w-full text-left border border-slate-100 rounded-xl p-3 hover:border-purple-300 hover:shadow-sm bg-slate-50/50 hover:bg-white text-xs transition-all flex items-center justify-between group"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-slate-700 group-hover:text-purple-600 transition-colors">
-                      {user.name}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${user.color}`}>
-                      {user.role}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-mono leading-tight">{user.position}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{user.email}</div>
-                </div>
-                <UserCheck className="w-4 h-4 text-slate-300 group-hover:text-purple-500 transition-colors shrink-0 ml-2" />
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-6 p-4 bg-slate-50 border border-slate-100 rounded-xl text-[10px] text-slate-400 text-center flex items-center justify-center gap-1.5 leading-normal">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-            <span>คุณสามารถเลือกบัญชีเพื่อสลับสิทธิ์และสวมบทบาทการทำงานเพื่อทดสอบได้ทันที</span>
-          </div>
         </div>
       </div>
     </div>

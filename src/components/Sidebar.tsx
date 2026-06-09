@@ -166,7 +166,7 @@ export default function Sidebar({
             </div>
             {!currentUser && (
               <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                Lock
+                Member
               </span>
             )}
             {currentUser && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}
@@ -192,7 +192,7 @@ export default function Sidebar({
             </div>
             {!currentUser && (
               <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                Lock
+                Member
               </span>
             )}
             {currentUser && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}

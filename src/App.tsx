@@ -282,21 +282,25 @@ export default function App() {
             <div className="absolute top-0 right-0 h-1.5 w-12 bg-emerald-500/15"></div>
           </div>
 
-          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Private (ความจุส่วนตัว)</span>
-            <div className="text-2xl font-black text-amber-500 tracking-tight leading-none">
-              {currentUser ? countStats.private : 'ล๊อค'}
+          {currentUser && (
+            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Private (ความจุส่วนตัว)</span>
+              <div className="text-2xl font-black text-amber-500 tracking-tight leading-none">
+                {countStats.private}
+              </div>
+              <div className="absolute top-0 right-0 h-1.5 w-12 bg-amber-500/15"></div>
             </div>
-            <div className="absolute top-0 right-0 h-1.5 w-12 bg-amber-500/15"></div>
-          </div>
+          )}
 
-          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">รายการโปรด</span>
-            <div className="text-2xl font-black text-amber-400 tracking-tight leading-none">
-              {currentUser ? countStats.favorites : 'ล๊อค'}
+          {currentUser && (
+            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">รายการโปรด</span>
+              <div className="text-2xl font-black text-amber-400 tracking-tight leading-none">
+                {countStats.favorites}
+              </div>
+              <div className="absolute top-0 right-0 h-1.5 w-12 bg-yellow-500/15"></div>
             </div>
-            <div className="absolute top-0 right-0 h-1.5 w-12 bg-yellow-500/15"></div>
-          </div>
+          )}
         </section>
 
         {/* Selected filters block tags feedback */}
