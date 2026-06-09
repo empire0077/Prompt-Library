@@ -50,8 +50,10 @@ async function ensureConnected(): Promise<any> {
       for (const r of REGIONS) {
         // Port 6543 (Transaction mode - highly recommended for serverless/Vercel functions)
         candidates.push(`postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-${r}.pooler.supabase.com:6543/postgres`);
+        candidates.push(`postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-1-${r}.pooler.supabase.com:6543/postgres`);
         // Port 5432 (Session mode fallback)
         candidates.push(`postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-0-${r}.pooler.supabase.com:5432/postgres`);
+        candidates.push(`postgresql://postgres.hlybhumzqmvvtdwrzdat:STNPawkB5xngiTen@aws-1-${r}.pooler.supabase.com:5432/postgres`);
       }
 
       // Direct IPv4/IPv6 host fallback (works locally, but fails on IPv4-only serverless hosts lacking IPv6)
