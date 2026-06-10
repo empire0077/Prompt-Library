@@ -19,6 +19,7 @@ export default function App() {
   const [categories, setCategories] = useState<PromptCategory[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [unfilteredPrompts, setUnfilteredPrompts] = useState<Prompt[]>([]);
 
   // Filtering states
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,6 +97,13 @@ export default function App() {
       }
       const data = await response.json();
       setPrompts(data);
+
+      // Fetch unfiltered scope prompts to preserve global telemetry count accurately
+      const unfilteredRes = await fetch('/api/prompts?scope=all');
+      if (unfilteredRes.ok) {
+        const unfilteredData = await unfilteredRes.json();
+        setUnfilteredPrompts(unfilteredData);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'เกิดข้อผิดพลาดในการดึงข้อมูลคำสั่ง');
@@ -150,6 +158,17 @@ export default function App() {
           }
           return p;
         }));
+        setUnfilteredPrompts(prev => prev.map(p => {
+          if (p.id === id) {
+            const isFav = !p.is_favorited;
+            return {
+              ...p,
+              is_favorited: isFav,
+              favorite_count: isFav ? (p.favorite_count || 0) + 1 : Math.max(0, (p.favorite_count || 1) - 1)
+            };
+          }
+          return p;
+        }));
       }
     } catch (err) {
       console.error('Failed to toggle favorite status', err);
@@ -192,11 +211,12 @@ export default function App() {
   };
 
   // Compute stat counters for quick informational bento-cards at top
+  const statsSource = unfilteredPrompts.length > 0 ? unfilteredPrompts : prompts;
   const countStats = {
-    total: prompts.length,
-    public: prompts.filter(p => p.visibility === 'public').length,
-    private: prompts.filter(p => p.visibility === 'private').length,
-    favorites: prompts.filter(p => p.is_favorited).length
+    total: statsSource.length,
+    public: statsSource.filter(p => p.visibility === 'public').length,
+    private: statsSource.filter(p => p.visibility === 'private').length,
+    favorites: statsSource.filter(p => p.is_favorited).length
   };
 
   if (loading) {
@@ -236,8 +256,8 @@ export default function App() {
         onSignOut={handleSignOut}
       />
 
-      {/* Main Panel Area - shifted right to stand parallel with sidebar */}
-      <main className="flex-1 min-w-0 pl-80 bg-slate-50 min-h-screen p-8 flex flex-col">
+      {/* Main Panel Area - shifted right with generous elegant padding to stand parallel with sidebar */}
+      <main className="flex-1 min-w-0 bg-slate-50 min-h-screen p-8 lg:p-12 pl-[352px] lg:pl-[384px] flex flex-col">
         {/* Core Header Banner with stats metrics */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -268,37 +288,89 @@ export default function App() {
         {/* Informational Stats Bento Grid Row */}
         {currentUser && (
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden group">
+            {/* Card 1: All prompts */}
+            <button
+              onClick={() => setSelectedScope('all')}
+              className={`p-4 rounded-2xl border text-left relative overflow-hidden transition-all duration-200 hover:scale-[1.02] cursor-pointer outline-none select-none group ${
+                selectedScope === 'all'
+                  ? 'border-purple-300 bg-purple-50/40 shadow-sm ring-1 ring-purple-500/10'
+                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
+              }`}
+            >
               <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">คำสั่งที่ประมวลผลได้</span>
-              <div className="text-2xl font-black text-slate-800 tracking-tight leading-none">
-                {countStats.total}
+              <div className="text-2xl font-black tracking-tight leading-none flex items-baseline gap-1.5">
+                <span className={selectedScope === 'all' ? 'text-purple-700 font-extrabold' : 'text-slate-800'}>
+                  {countStats.total}
+                </span>
+                <span className="text-[10px] font-semibold text-slate-400">คำสั่งทั้งหมด</span>
               </div>
-              <div className="absolute top-0 right-0 h-1.5 w-12 bg-purple-500/15"></div>
-            </div>
+              <div className={`absolute top-0 right-0 h-1 transition-all duration-300 ${
+                selectedScope === 'all' ? 'w-full bg-purple-600' : 'w-12 bg-purple-500/15'
+              }`}></div>
+            </button>
 
-            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+            {/* Card 2: Public prompts */}
+            <button
+              onClick={() => setSelectedScope('public')}
+              className={`p-4 rounded-2xl border text-left relative overflow-hidden transition-all duration-200 hover:scale-[1.02] cursor-pointer outline-none select-none group ${
+                selectedScope === 'public'
+                  ? 'border-emerald-300 bg-emerald-50/40 shadow-sm ring-1 ring-emerald-500/10'
+                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
+              }`}
+            >
               <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Public (แชร์ร่วม)</span>
-              <div className="text-2xl font-black text-emerald-600 tracking-tight leading-none">
-                {countStats.public}
+              <div className="text-2xl font-black tracking-tight leading-none flex items-baseline gap-1.5">
+                <span className="text-emerald-600">
+                  {countStats.public}
+                </span>
+                <span className="text-[10px] font-semibold text-slate-400">คำสั่งสาธารณะ</span>
               </div>
-              <div className="absolute top-0 right-0 h-1.5 w-12 bg-emerald-500/15"></div>
-            </div>
+              <div className={`absolute top-0 right-0 h-1 transition-all duration-300 ${
+                selectedScope === 'public' ? 'w-full bg-emerald-500' : 'w-12 bg-emerald-500/15'
+              }`}></div>
+            </button>
 
-            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+            {/* Card 3: Private prompts */}
+            <button
+              onClick={() => setSelectedScope('private')}
+              className={`p-4 rounded-2xl border text-left relative overflow-hidden transition-all duration-200 hover:scale-[1.02] cursor-pointer outline-none select-none group ${
+                selectedScope === 'private'
+                  ? 'border-amber-300 bg-amber-50/40 shadow-sm ring-1 ring-amber-500/10'
+                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
+              }`}
+            >
               <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Private (ความจุส่วนตัว)</span>
-              <div className="text-2xl font-black text-amber-500 tracking-tight leading-none">
-                {countStats.private}
+              <div className="text-2xl font-black tracking-tight leading-none flex items-baseline gap-1.5">
+                <span className="text-amber-500">
+                  {countStats.private}
+                </span>
+                <span className="text-[10px] font-semibold text-slate-400">คำสั่งส่วนตัว</span>
               </div>
-              <div className="absolute top-0 right-0 h-1.5 w-12 bg-amber-500/15"></div>
-            </div>
+              <div className={`absolute top-0 right-0 h-1 transition-all duration-300 ${
+                selectedScope === 'private' ? 'w-full bg-amber-500' : 'w-12 bg-amber-500/15'
+              }`}></div>
+            </button>
 
-            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+            {/* Card 4: Favorites prompts */}
+            <button
+              onClick={() => setSelectedScope('favorites')}
+              className={`p-4 rounded-2xl border text-left relative overflow-hidden transition-all duration-200 hover:scale-[1.02] cursor-pointer outline-none select-none group ${
+                selectedScope === 'favorites'
+                  ? 'border-yellow-300 bg-yellow-50/20 shadow-sm ring-1 ring-yellow-500/10'
+                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
+              }`}
+            >
               <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">รายการโปรด</span>
-              <div className="text-2xl font-black text-amber-400 tracking-tight leading-none">
-                {countStats.favorites}
+              <div className="text-2xl font-black tracking-tight leading-none flex items-baseline gap-1.5">
+                <span className="text-amber-600">
+                  {countStats.favorites}
+                </span>
+                <span className="text-[10px] font-semibold text-slate-400">ชื่นชอบ</span>
               </div>
-              <div className="absolute top-0 right-0 h-1.5 w-12 bg-yellow-500/15"></div>
-            </div>
+              <div className={`absolute top-0 right-0 h-1 transition-all duration-300 ${
+                selectedScope === 'favorites' ? 'w-full bg-yellow-500' : 'w-12 bg-yellow-500/15'
+              }`}></div>
+            </button>
           </section>
         )}
 

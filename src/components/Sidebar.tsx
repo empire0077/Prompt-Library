@@ -74,9 +74,10 @@ export default function Sidebar({
         <div className="flex items-center gap-3">
           <LogoIcon size={38} className="shrink-0" />
           <div>
-            <h1 className="font-extrabold text-sm tracking-tight leading-none outfit font-sans flex items-center gap-1">
-              <span className="text-[#131024]">Your</span>
-              <span className="text-[#7c3aed]">Prompt</span>
+            <h1 className="font-black text-sm tracking-tight leading-none outfit flex items-center gap-0.5">
+              <span className="text-[#131024]">YOUR</span>
+              <span className="text-[#7c3aed]">PROMPT</span>
+              <span className="text-slate-800 font-semibold text-[10px]">LIBRARY</span>
             </h1>
             <span className="text-[10px] text-slate-450 font-bold uppercase tracking-wider mt-1 block">
               Personal Workspace

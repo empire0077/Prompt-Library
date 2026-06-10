@@ -1,9 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-sans: "Inter", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "IBM Plex Sans Thai", "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* PEA Primary Fuchsia/Magenta Brand Ramp */
+  --color-brand-25: #fff7ff;
+  --color-brand-50: #fdeefc;
+  --color-brand-100: #fbd9f9;
+  --color-brand-200: #f8bff4;
+  --color-brand-300: #f4a1ec;
+  --color-brand-400: #ef82e1;
+  --color-brand-500: #e95ed2;
+  --color-brand-600: #e134c1;
+  --color-brand-700: #cf07aa;
+  --color-brand-800: #a80689;
+  --color-brand-900: #74045f;
+  --color-brand-950: #450239;
+
+  /* Override tailwind default purple with PEA primary fuchsia/magenta brand colors for seamless backward compatibility */
+  --color-purple-25: #fff7ff;
+  --color-purple-50: #fdeefc;
+  --color-purple-100: #fbd9f9;
+  --color-purple-200: #f8bff4;
+  --color-purple-300: #f4a1ec;
+  --color-purple-400: #ef82e1;
+  --color-purple-500: #e95ed2;
+  --color-purple-600: #e134c1;
+  --color-purple-700: #cf07aa;
+  --color-purple-800: #a80689;
+  --color-purple-900: #74045f;
+  --color-purple-950: #450239;
+
+  /* Grounding neutral spine (the gray ramp specified in design-system) */
+  --color-slate-25: #fdfdfd;
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f5f5f5;
+  --color-slate-200: #e9eaeb;
+  --color-slate-300: #d5d7da;
+  --color-slate-400: #a4a7ae;
+  --color-slate-500: #717680;
+  --color-slate-600: #535862;
+  --color-slate-700: #414651;
+  --color-slate-800: #252b37;
+  --color-slate-900: #181d27;
+  --color-slate-950: #0a0d12;
+  
+  --color-gray-25: #fdfdfd;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e9eaeb;
+  --color-gray-300: #d5d7da;
+  --color-gray-400: #a4a7ae;
+  --color-gray-500: #717680;
+  --color-gray-600: #535862;
+  --color-gray-700: #414651;
+  --color-gray-800: #252b37;
+  --color-gray-900: #181d27;
+  --color-gray-950: #0a0d12;
 }
 
 /* Custom scrollbars for a refined look */
@@ -15,14 +71,25 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-gray-300);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-gray-450);
 }
 
 /* Brand custom background gradient styles */
 .pea-gradient {
-  background: linear-gradient(135deg, #a21caf 0%, #aa33b5 50%, #4f46e5 100%);
+  background: linear-gradient(135deg, #cf07aa 0%, #a80689 50%, #74045f 100%);
 }
+
+/* Styled focus rings matching PEA design system specs precisely */
+.pea-focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--color-brand-500);
+}
+.pea-focus-ring-error:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #ef4444;
+}
+
