@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Globe, Lock, Star, Copy, Zap, PenTool, Trash2, Check,
-  Eye, FileText, Settings, Award
+  Eye, FileText, Settings, Award, Pointer
 } from 'lucide-react';
 import { Prompt, User } from '../types';
 
@@ -145,8 +145,8 @@ export default function PromptCard({
             onClick={() => onUseTemplate(prompt)}
             className="flex-1 flex items-center justify-center gap-1.5 bg-purple-55 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-700 font-semibold py-2 px-3 rounded-xl text-xs transition-all"
           >
-            <Zap className="w-3.5 h-3.5 fill-purple-600 text-purple-600" />
-            <span>ร่วมกรอก (Use Template)</span>
+            <Pointer className="w-3.5 h-3.5 text-purple-600 fill-purple-200" />
+            <span>กดนำไปใช้ (Use Template)</span>
           </button>
 
           <button

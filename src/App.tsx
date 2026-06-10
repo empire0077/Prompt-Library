@@ -265,24 +265,24 @@ export default function App() {
         </header>
 
         {/* Informational Stats Bento Grid Row */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden group">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">คำสั่งที่ประมวลผลได้</span>
-            <div className="text-2xl font-black text-slate-800 tracking-tight leading-none">
-              {countStats.total}
+        {currentUser && (
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden group">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">คำสั่งที่ประมวลผลได้</span>
+              <div className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+                {countStats.total}
+              </div>
+              <div className="absolute top-0 right-0 h-1.5 w-12 bg-purple-500/15"></div>
             </div>
-            <div className="absolute top-0 right-0 h-1.5 w-12 bg-purple-500/15"></div>
-          </div>
 
-          <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Public (แชร์ร่วม)</span>
-            <div className="text-2xl font-black text-emerald-600 tracking-tight leading-none">
-              {countStats.public}
+            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Public (แชร์ร่วม)</span>
+              <div className="text-2xl font-black text-emerald-600 tracking-tight leading-none">
+                {countStats.public}
+              </div>
+              <div className="absolute top-0 right-0 h-1.5 w-12 bg-emerald-500/15"></div>
             </div>
-            <div className="absolute top-0 right-0 h-1.5 w-12 bg-emerald-500/15"></div>
-          </div>
 
-          {currentUser && (
             <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
               <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Private (ความจุส่วนตัว)</span>
               <div className="text-2xl font-black text-amber-500 tracking-tight leading-none">
@@ -290,9 +290,7 @@ export default function App() {
               </div>
               <div className="absolute top-0 right-0 h-1.5 w-12 bg-amber-500/15"></div>
             </div>
-          )}
 
-          {currentUser && (
             <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left relative overflow-hidden">
               <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">รายการโปรด</span>
               <div className="text-2xl font-black text-amber-400 tracking-tight leading-none">
@@ -300,8 +298,8 @@ export default function App() {
               </div>
               <div className="absolute top-0 right-0 h-1.5 w-12 bg-yellow-500/15"></div>
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Selected filters block tags feedback */}
         {(selectedCategory || selectedTool || selectedScope !== 'all') && (
