@@ -40,6 +40,7 @@ export interface Prompt {
   owner_user_id: string;
   category_id: string | null;
   primary_tool_id: string | null;
+  tool_ids?: string | null;
   title: string;
   slug: string | null;
   description: string | null;

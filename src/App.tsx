@@ -38,6 +38,30 @@ export default function App() {
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [activeEditPrompt, setActiveEditPrompt] = useState<Prompt | null>(null);
 
+  // Master data loading helper
+  const loadMasterData = async () => {
+    try {
+      const [catsRes, toolsRes] = await Promise.all([
+        fetch('/api/categories'),
+        fetch('/api/tools')
+      ]);
+
+      if (catsRes.ok) {
+        const catsData = await catsRes.json();
+        setCategories(catsData);
+      }
+      if (toolsRes.ok) {
+        const toolsData = await toolsRes.json();
+        setTools(toolsData);
+      }
+    } catch (err) {
+      console.error('Failed to load categories/tools master data', err);
+      setError('ไม่สามารถโหลดข้อมูลจัดกลุ่มงานและเครื่องมือเป้าหมายได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 1. Initial mounting and user auth validation
   useEffect(() => {
     const checkSession = async () => {
@@ -49,29 +73,6 @@ export default function App() {
         }
       } catch (err) {
         console.error('Session authentication failed/or empty proxy', err);
-      }
-    };
-
-    const loadMasterData = async () => {
-      try {
-        const [catsRes, toolsRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/tools')
-        ]);
-
-        if (catsRes.ok) {
-          const catsData = await catsRes.json();
-          setCategories(catsData);
-        }
-        if (toolsRes.ok) {
-          const toolsData = await toolsRes.json();
-          setTools(toolsData);
-        }
-      } catch (err) {
-        console.error('Failed to load categories/tools master data', err);
-        setError('ไม่สามารถโหลดข้อมูลจัดกลุ่มงานและเครื่องมือเป้าหมายได้');
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -414,6 +415,7 @@ export default function App() {
           categories={categories}
           tools={tools}
           onSave={fetchPromptsData}
+          onRefreshMasterData={loadMasterData}
         />
       </main>
     </div>

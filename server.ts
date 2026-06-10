@@ -427,6 +427,50 @@ app.use(cookieParser());
     }
   });
 
+  // 6b. Add new Prompt Category
+  app.post('/api/categories', async (req, res) => {
+    const user = await getAuthorizedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'ล็อกอินก่อนเพื่อเพิ่มหมวดหมู่ใหม่' });
+    }
+
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'กรุณากรอกชื่อหมวดหมู่' });
+    }
+
+    try {
+      const cleanName = name.trim();
+      let slug = cleanName.toLowerCase().replace(/[^a-zA-Z0-9\u0e00-\u0e7f]+/g, '-').replace(/(^-|-$)+/g, '');
+      if (!slug) {
+        slug = 'cat-' + Math.floor(Math.random() * 100000);
+      }
+
+      // Check if already exists (case-insensitive name check)
+      const [existing] = await sql`
+        SELECT * FROM prompt_categories 
+        WHERE LOWER(name) = LOWER(${cleanName}) OR slug = ${slug} 
+        LIMIT 1
+      `;
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const [maxSort] = await sql`SELECT COALESCE(MAX(sort_order), 0) as max_val FROM prompt_categories`;
+      const nextSort = (maxSort?.max_val || 0) + 1;
+
+      const [newCat] = await sql`
+        INSERT INTO prompt_categories (name, slug, description, icon, sort_order, is_active, created_at, updated_at)
+        VALUES (${cleanName}, ${slug}, 'หมวดหมู่เพิ่มเติมโดยผู้ใช้', 'Sparkles', ${nextSort}, true, now(), now())
+        RETURNING *
+      `;
+      res.json(newCat);
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // 7. Master Tools query
   app.get('/api/tools', async (req, res) => {
     try {
@@ -436,6 +480,47 @@ app.use(cookieParser());
         ORDER BY id ASC
       `;
       res.json(toolsList);
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 7b. Add new AI Model/Tool recommendation
+  app.post('/api/tools', async (req, res) => {
+    const user = await getAuthorizedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'ล็อกอินก่อนเพื่อเพิ่มแนะนำโมเดล AI' });
+    }
+
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'กรุณากรอกชื่อโมเดล AI' });
+    }
+
+    try {
+      const cleanName = name.trim();
+      let slug = cleanName.toLowerCase().replace(/[^a-zA-Z0-9\u0e00-\u0e7f]+/g, '-').replace(/(^-|-$)+/g, '');
+      if (!slug) {
+        slug = 'model-' + Math.floor(Math.random() * 100000);
+      }
+
+      // Check if already exists (case-insensitive name check)
+      const [existing] = await sql`
+        SELECT * FROM tools 
+        WHERE LOWER(name) = LOWER(${cleanName}) OR slug = ${slug} 
+        LIMIT 1
+      `;
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const [newTool] = await sql`
+        INSERT INTO tools (name, slug, category, icon_url, website_url, is_active, created_at)
+        VALUES (${cleanName}, ${slug}, 'AI Model', null, null, true, now())
+        RETURNING *
+      `;
+      res.json(newTool);
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -479,11 +564,30 @@ app.use(cookieParser());
           ))
         )
         AND (${categoryIdVal}::text IS NULL OR p.category_id::text = ${categoryIdVal})
-        AND (${toolIdVal}::text IS NULL OR p.primary_tool_id::text = ${toolIdVal})
+        AND (${toolIdVal}::text IS NULL OR p.primary_tool_id::text = ${toolIdVal} OR p.tool_ids LIKE ${'%' + (toolIdVal || '') + '%'})
         AND (${searchVal}::text IS NULL OR p.title ILIKE ${searchVal} OR p.description ILIKE ${searchVal})
         ORDER BY p.created_at DESC
       `;
-      res.json(results);
+
+      // Resolve multiple tool names in Node.js
+      const allActiveTools = await sql`SELECT id, name FROM tools WHERE is_active = true`;
+      const toolMap = new Map(allActiveTools.map((t: any) => [t.id, t.name]));
+
+      const resolvedResults = results.map((p: any) => {
+        if (p.tool_ids) {
+          const ids = p.tool_ids.split(',').map((id: string) => id.trim()).filter(Boolean);
+          const names = ids.map((id: string) => toolMap.get(id)).filter(Boolean);
+          if (names.length > 0) {
+            return {
+              ...p,
+              tool_name: names.join(', ')
+            };
+          }
+        }
+        return p;
+      });
+
+      res.json(resolvedResults);
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -629,18 +733,23 @@ app.use(cookieParser());
       return res.status(401).json({ error: 'ล็อกอินเพื่อสร้างคำสั่ง AI ใหม่' });
     }
 
-    const { title, description, category_id, primary_tool_id, visibility, blocks, variables } = req.body;
+    const { title, description, category_id, primary_tool_id, tool_ids, visibility, blocks, variables } = req.body;
 
     try {
+      const rawToolIds = Array.isArray(tool_ids) ? tool_ids : (tool_ids ? String(tool_ids).split(',') : []);
+      const cleanToolIds = rawToolIds.map((tid: any) => String(tid).trim()).filter(Boolean);
+      const finalToolIdsStr = cleanToolIds.join(',');
+      const finalPrimaryToolId = cleanToolIds[0] || primary_tool_id || null;
+
       await sql.begin(async (tx) => {
         // A. Insert prompt configuration entry
         const [pRow] = await tx`
           INSERT INTO prompts (
-            owner_user_id, category_id, primary_tool_id, title, description, 
+            owner_user_id, category_id, primary_tool_id, tool_ids, title, description, 
             visibility, status, created_at, updated_at, usage_count, copy_count, favorite_count
           )
           VALUES (
-            ${user.id}, ${category_id}, ${primary_tool_id}, ${title}, ${description}, 
+            ${user.id}, ${category_id}, ${finalPrimaryToolId}, ${finalToolIdsStr || null}, ${title}, ${description}, 
             ${visibility}, 'published', now(), now(), 0, 0, 0
           )
           RETURNING *
@@ -705,7 +814,7 @@ app.use(cookieParser());
     }
 
     const { id } = req.params;
-    const { title, description, category_id, primary_tool_id, visibility, blocks, variables } = req.body;
+    const { title, description, category_id, primary_tool_id, tool_ids, visibility, blocks, variables } = req.body;
 
     try {
       const [existing] = await sql`SELECT owner_user_id FROM prompts WHERE id = ${id} LIMIT 1`;
@@ -714,15 +823,20 @@ app.use(cookieParser());
       }
 
       if (existing.owner_user_id !== user.id && user.role !== 'admin') {
-        return res.status(403).json({ error: 'คุณไม่มีสิทธิ์แก้ไขคำสั่งนี้' });
+         return res.status(403).json({ error: 'คุณไม่มีสิทธิ์แก้ไขคำสั่งนี้' });
       }
+
+      const rawToolIds = Array.isArray(tool_ids) ? tool_ids : (tool_ids ? String(tool_ids).split(',') : []);
+      const cleanToolIds = rawToolIds.map((tid: any) => String(tid).trim()).filter(Boolean);
+      const finalToolIdsStr = cleanToolIds.join(',');
+      const finalPrimaryToolId = cleanToolIds[0] || primary_tool_id || null;
 
       await sql.begin(async (tx) => {
         // A. Update prompt metadata
         await tx`
           UPDATE prompts 
           SET title = ${title}, description = ${description}, category_id = ${category_id}, 
-              primary_tool_id = ${primary_tool_id}, visibility = ${visibility}, updated_at = now()
+              primary_tool_id = ${finalPrimaryToolId}, tool_ids = ${finalToolIdsStr || null}, visibility = ${visibility}, updated_at = now()
           WHERE id = ${id}
         `;
 

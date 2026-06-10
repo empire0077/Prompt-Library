@@ -9,6 +9,7 @@ interface PromptModalProps {
   categories: PromptCategory[];
   tools: Tool[];
   onSave: () => void;
+  onRefreshMasterData: () => Promise<void>;
 }
 
 export default function PromptModal({
@@ -17,7 +18,8 @@ export default function PromptModal({
   prompt,
   categories,
   tools,
-  onSave
+  onSave,
+  onRefreshMasterData
 }: PromptModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,79 @@ export default function PromptModal({
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [primaryToolId, setPrimaryToolId] = useState('');
+  const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+
+  // Inner auxiliary states for custom creation
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [submittingCat, setSubmittingCat] = useState(false);
+
+  const [isAddingTool, setIsAddingTool] = useState(false);
+  const [newToolName, setNewToolName] = useState('');
+  const [submittingTool, setSubmittingTool] = useState(false);
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    setSubmittingCat(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'สร้างหมวดหมู่ใหม่ล้มเหลว');
+      }
+
+      const createdCat = await response.json();
+      await onRefreshMasterData();
+
+      // Automatically select the freshly generated category
+      setCategoryId(createdCat.id);
+      setIsAddingCategory(false);
+      setNewCategoryName('');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'เกิดข้อผิดพลาดในการสร้างหมวดหมู่');
+    } finally {
+      setSubmittingCat(false);
+    }
+  };
+
+  const handleCreateTool = async () => {
+    if (!newToolName.trim()) return;
+    setSubmittingTool(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newToolName })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'สร้างโมเดล AI ล้มเหลว');
+      }
+
+      const createdTool = await response.json();
+      await onRefreshMasterData();
+
+      // Automatically select the newly created model
+      setPrimaryToolId(createdTool.id);
+      setIsAddingTool(false);
+      setNewToolName('');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'เกิดข้อผิดพลาดในการเพิ่มโมเดล AI');
+    } finally {
+      setSubmittingTool(false);
+    }
+  };
 
   // Blocks & Variables sublists
   const [blocks, setBlocks] = useState<Partial<PromptBlock>[]>([
@@ -48,6 +122,16 @@ export default function PromptModal({
       setDescription(prompt.description || '');
       setCategoryId(prompt.category_id || '');
       setPrimaryToolId(prompt.primary_tool_id || '');
+      
+      // Initialize selectedToolIds
+      if (prompt.tool_ids) {
+        setSelectedToolIds(prompt.tool_ids.split(',').map((s: string) => s.trim()).filter(Boolean));
+      } else if (prompt.primary_tool_id) {
+        setSelectedToolIds([prompt.primary_tool_id]);
+      } else {
+        setSelectedToolIds([]);
+      }
+
       setVisibility(prompt.visibility || 'public');
 
       // Fetch categories sub-versions items
@@ -74,6 +158,7 @@ export default function PromptModal({
       setDescription('');
       setCategoryId(categories[0]?.id || '');
       setPrimaryToolId(tools[0]?.id || '');
+      setSelectedToolIds(tools[0]?.id ? [tools[0].id] : []);
       setVisibility('public');
       setBlocks([
         { block_type: 'system', name: 'Role Directive', content: 'คุณคือผู้เชี่ยวชาญ...', sort_order: 1 },
@@ -131,7 +216,8 @@ export default function PromptModal({
       title,
       description,
       category_id: categoryId,
-      primary_tool_id: primaryToolId,
+      primary_tool_id: selectedToolIds[0] || primaryToolId || null,
+      tool_ids: selectedToolIds,
       visibility,
       blocks,
       variables
@@ -220,29 +306,150 @@ export default function PromptModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">หมวดหมู่เป้าหมาย (Category)</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center h-5">
+                <label className="text-xs font-semibold text-slate-700">หมวดหมู่เป้าหมาย (Category)</label>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingCategory(!isAddingCategory)}
+                  className="text-purple-600 hover:text-purple-800 text-[10px] font-bold flex items-center gap-0.5"
+                >
+                  <Plus className="w-2.5 h-2.5" />
+                  <span>เพิ่มหมวดหมู่ใหม่</span>
+                </button>
+              </div>
+              
+              {isAddingCategory ? (
+                <div className="flex gap-1.5 items-center">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="ป้อนชื่อหมวดหมู่..."
+                    className="flex-1 text-xs p-2 border border-purple-200 rounded-xl focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={submittingCat}
+                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0"
+                  >
+                    {submittingCat ? '...' : 'เพิ่ม'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingCategory(false);
+                      setNewCategoryName('');
+                    }}
+                    className="px-2 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 text-[11px] font-bold rounded-lg transition-all shrink-0"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">โมเดล AI ที่แนะนำ (AI Model Vendor)</label>
-              <select
-                value={primaryToolId}
-                onChange={(e) => setPrimaryToolId(e.target.value)}
-                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white"
-              >
-                {tools.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name} ({t.category || ''})</option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center h-5">
+                <label className="text-xs font-semibold text-slate-700">โมเดล AI ที่แนะนำ (AI Model Vendor)</label>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingTool(!isAddingTool)}
+                  className="text-purple-600 hover:text-purple-800 text-[10px] font-bold flex items-center gap-0.5"
+                >
+                  <Plus className="w-2.5 h-2.5" />
+                  <span>เพิ่มโมเดล AI ใหม่</span>
+                </button>
+              </div>
+
+              {isAddingTool ? (
+                <div className="flex gap-1.5 items-center">
+                  <input
+                    type="text"
+                    value={newToolName}
+                    onChange={(e) => setNewToolName(e.target.value)}
+                    placeholder="ป้อนชื่อโมเดล..."
+                    className="flex-1 text-xs p-2 border border-purple-200 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateTool}
+                    disabled={submittingTool}
+                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0"
+                  >
+                    {submittingTool ? '...' : 'เพิ่ม'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingTool(false);
+                      setNewToolName('');
+                    }}
+                    className="px-2 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 text-[11px] font-bold rounded-lg transition-all shrink-0"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {/* Selected badges list */}
+                  {selectedToolIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100 min-h-[38px] items-center">
+                      {selectedToolIds.map((tid) => {
+                        const tool = tools.find((t) => t.id === tid);
+                        if (!tool) return null;
+                        return (
+                          <span
+                            key={tid}
+                            className="inline-flex items-center gap-1 px-2.5 base-badge py-0.5 rounded-lg text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-100 transition-all"
+                          >
+                            <span>{tool.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedToolIds((prev) => prev.filter((id) => id !== tid))}
+                              className="text-purple-400 hover:text-purple-600 font-bold transition-colors cursor-pointer shrink-0 ml-1"
+                              title="ลบออก"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Select box block */}
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val && !selectedToolIds.includes(val)) {
+                        setSelectedToolIds((prev) => [...prev, val]);
+                      }
+                    }}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white"
+                  >
+                    <option value="" disabled>-- เลือกโมเดล AI เพื่อแนะนำเพิ่มเติม --</option>
+                    {tools.map((t) => (
+                      <option key={t.id} value={t.id} disabled={selectedToolIds.includes(t.id)}>
+                        {t.name} {t.category ? `(${t.category})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1 col-span-2">
