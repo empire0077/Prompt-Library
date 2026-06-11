@@ -353,9 +353,11 @@ export default function PromptModal({
                   onChange={(e) => setCategoryId(e.target.value)}
                   className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
                 >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">{cat.name}</option>
-                  ))}
+                  {[...categories]
+                    .sort((a, b) => a.name.localeCompare(b.name, 'th'))
+                    .map((cat) => (
+                      <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">{cat.name}</option>
+                    ))}
                 </select>
               )}
             </div>
@@ -588,7 +590,7 @@ export default function PromptModal({
                           value={v.name || ''}
                           onChange={(e) => handleVariableChange(idx, 'name', e.target.value.replaceAll(/[^a-zA-Z0-9_]/g, ''))}
                           placeholder="ชื่อตัวเลือกระบบ เช่น raw_text"
-                          className="text-xs p-0.5 border-b border-purple-200 dark:border-purple-900 font-bold font-mono text-purple-650 dark:text-purple-450 focus:outline-none bg-transparent"
+                          className="text-xs p-0.5 border-b border-purple-200 dark:border-purple-900 font-bold font-mono text-purple-700 dark:text-purple-400 focus:outline-none bg-transparent"
                         />
                       </div>
                       <button

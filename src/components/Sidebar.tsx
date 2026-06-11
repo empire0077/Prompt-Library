@@ -3,7 +3,8 @@ import {
   Plus, Search, Globe, Lock, Star, ChevronRight, BookOpen, 
   Code, User, Edit3, Database, Tv, LogIn, LogOut, UserCheck,
   FileText, Briefcase, Cpu, TrendingUp, Palette, Shield, Server,
-  Zap, Headphones, Coins, BarChart2, Settings, Mail, Phone, Calendar, Wrench
+  Zap, Headphones, Coins, BarChart2, Settings, Mail, Phone, Calendar, Wrench,
+  Flame, GraduationCap, ShoppingCart
 } from 'lucide-react';
 import { User as UserType, PromptCategory, Tool, Prompt } from '../types';
 import LogoIcon from './LogoIcon';
@@ -62,6 +63,17 @@ export default function Sidebar({
   const renderCategoryIcon = (catName: string, iconName: string | null) => {
     const name = catName.toLowerCase();
     
+    // Explicit overrides for user request
+    if (name.includes('procurement') || name.includes('จัดซื้อ') || name.includes('จัดจ้าง') || name.includes('พัสดุ')) {
+      return <ShoppingCart className="w-4 h-4" />;
+    }
+    if (name.includes('management') || name.includes('การจัดการ') || name.includes('ผู้บริหาร') || name.includes('บริหาร')) {
+      // Avoid matching Knowledge Management
+      if (!name.includes('knowledge') && !name.includes('เรียน') && !name.includes('ศึกษา') && !name.includes('ความรู้')) {
+        return <Briefcase className="w-4 h-4" />;
+      }
+    }
+
     // First, try matching based on keywords in category name
     if (name.includes('โค้ด') || name.includes('code') || name.includes('พัฒนา') || name.includes('dev')) {
       return <Code className="w-4 h-4" />;
@@ -108,11 +120,17 @@ export default function Sidebar({
     if (name.includes('สไลด์') || name.includes('นำเสนอ') || name.includes('presentation') || name.includes('slide') || name.includes('ประชุม')) {
       return <Tv className="w-4 h-4" />;
     }
+    if (name.includes('academic') || name.includes('วิชาการ') || name.includes('เทียน') || name.includes('ความรู้') || name.includes('บัณฑิต') || name.includes('หมวก')) {
+      return <GraduationCap className="w-4 h-4" />;
+    }
     if (name.includes('เรียน') || name.includes('ศึกษา') || name.includes('อบรม') || name.includes('knowledge') || name.includes('know')) {
       return <BookOpen className="w-4 h-4" />;
     }
     if (name.includes('บุคคล') || name.includes('human') || name.includes('resource') || name.includes('hr') || name.includes('คน')) {
       return <User className="w-4 h-4" />;
+    }
+    if (name.includes('โปรแกรม') || name.includes('เขียนโค้ด') || name.includes('โค้ด') || name.includes('programming') || name.includes('code') || name.includes('coding') || name.includes('dev') || name.includes('development')) {
+      return <Code className="w-4 h-4" />;
     }
 
     // Default to matching string-based icon if provided
@@ -130,6 +148,16 @@ export default function Sidebar({
         return <Tv className="w-4 h-4" />;
       case 'book-open':
         return <BookOpen className="w-4 h-4" />;
+      case 'flame':
+        return <Flame className="w-4 h-4" />;
+      case 'graduation-cap':
+      case 'academic':
+        return <GraduationCap className="w-4 h-4" />;
+      case 'shopping-cart':
+      case 'shopping-bag':
+        return <ShoppingCart className="w-4 h-4" />;
+      case 'briefcase':
+        return <Briefcase className="w-4 h-4" />;
       default:
         return <BookOpen className="w-4 h-4" />;
     }
@@ -390,7 +418,7 @@ export default function Sidebar({
                   <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs truncate">
                     {currentUser.display_name}
                   </span>
-                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase border bg-purple-100 dark:bg-purple-955 text-purple-750 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase border bg-purple-100 dark:bg-purple-300 text-purple-800 dark:text-slate-955 border-purple-200 dark:border-purple-400">
                     {currentUser.role}
                   </span>
                 </div>

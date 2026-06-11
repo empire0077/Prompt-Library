@@ -103,15 +103,7 @@ export default function PromptCard({
           {prompt.description || 'ไม่มีคำอธิบายสำหรับคำสั่งนี้'}
         </p>
 
-        {/* Author Badge */}
-        {prompt.owner_name && (
-          <div className="flex items-center gap-1.5 mb-4 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-            <div className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-955 flex items-center justify-center font-bold text-slate-500 dark:text-slate-400 text-[8px] uppercase shrink-0">
-              {prompt.owner_name.slice(0, 1)}
-            </div>
-            <span>แชร์โดย: {prompt.owner_name}</span>
-          </div>
-        )}
+
       </div>
 
       <div>
@@ -146,7 +138,7 @@ export default function PromptCard({
             className="flex-1 flex items-center justify-center gap-1.5 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 active:bg-purple-200 dark:active:bg-purple-900 text-purple-700 dark:text-purple-300 font-semibold py-2 px-3 rounded-xl text-xs transition-all cursor-pointer shadow-sm"
           >
             <Pointer className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 fill-purple-200" />
-            <span>กดนำไปใช้ (Use Template)</span>
+            <span>กดนำไปใช้งาน</span>
           </button>
 
           <button
