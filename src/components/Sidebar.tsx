@@ -111,10 +111,14 @@ export default function Sidebar({
     if (name.includes('เรียน') || name.includes('ศึกษา') || name.includes('อบรม') || name.includes('knowledge') || name.includes('know')) {
       return <BookOpen className="w-4 h-4" />;
     }
+    if (name.includes('บุคคล') || name.includes('human') || name.includes('resource') || name.includes('hr') || name.includes('คน')) {
+      return <User className="w-4 h-4" />;
+    }
 
     // Default to matching string-based icon if provided
     switch (iconName) {
       case 'user':
+      case 'users':
         return <User className="w-4 h-4" />;
       case 'edit':
         return <Edit3 className="w-4 h-4" />;

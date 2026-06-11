@@ -142,7 +142,7 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
               </div>
 
               {variables.length === 0 ? (
-                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-455 dark:text-slate-400 leading-relaxed">
+                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
                   โครงสร้างคำสั่งนี้ไม่มีตัวแปรเสริม คุณสามารถสกัดและก๊อปปี้บล็อกสมบูรณ์พล็อตด่วนได้ทันทีที่แผงด้านข้าง
                 </div>
               ) : (
@@ -172,7 +172,7 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
                         value={values[variable.name] || ''}
                         onChange={(e) => handleInputChange(variable.name, e.target.value)}
                         placeholder={variable.placeholder || 'ระบุรายละเอียด...'}
-                        className="w-full text-xs p-3 bg-slate-50 dark:bg-slate-950/20 rounded-xl border border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-550"
+                        className="w-full text-xs p-3 bg-slate-50 dark:bg-slate-950/20 rounded-xl border border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
                       />
                     </div>
                   ))}
@@ -189,7 +189,7 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
                 </div>
                 
                 {prompt.tool_name && (
-                  <span className="text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-805 py-0.5 px-2 rounded-md font-mono text-slate-500 dark:text-slate-400 font-bold">
+                  <span className="text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-0.5 px-2 rounded-md font-mono text-slate-500 dark:text-slate-400 font-bold">
                     Target: {prompt.tool_name}
                   </span>
                 )}
