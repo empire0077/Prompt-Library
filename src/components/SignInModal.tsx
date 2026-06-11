@@ -68,14 +68,14 @@ export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalP
   if (!isOpen) return null;
 
   return (
-    <div id="signin-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div id="signin-modal-container" className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+    <div id="signin-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+      <div id="signin-modal-container" className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800/80 overflow-hidden">
         {/* Brand Accent Header Banner */}
         <div className="h-2 pea-gradient w-full"></div>
 
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
           style={{ width: '32px', height: '32px' }}
         >
           <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mx-auto">
@@ -88,16 +88,16 @@ export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalP
             <div className="inline-flex mb-4 transition-transform hover:scale-105 duration-300">
               <LogoIcon size={64} />
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-center justify-center flex items-center gap-1.5 outfit">
+            <h2 className="text-xl font-bold tracking-tight text-center justify-center flex items-center gap-1.5 outfit text-slate-900 dark:text-white">
               <span>เข้าสู่ระบบ</span>
-              <span className="text-[#131024] font-extrabold">Your</span>
-              <span className="text-[#7c3aed] font-extrabold">Prompt</span>
+              <span className="text-[#131024] dark:text-slate-100 font-extrabold">Your</span>
+              <span className="text-[#7c3aed] dark:text-purple-400 font-extrabold">Prompt</span>
             </h2>
-            <p className="text-sm text-slate-500 mt-1">คลังคัดสรรและจัดเก็บคำสั่ง AI ส่วนตัวและการใช้งานอย่างเป็นระบบ</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">คลังคัดสรรและจัดเก็บคำสั่ง AI ส่วนตัวและการใช้งานอย่างเป็นระบบ</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs flex gap-2">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-450 border border-red-200 dark:border-red-900/40 rounded-xl text-xs flex gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -107,7 +107,7 @@ export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalP
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 active:bg-slate-100 dark:active:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" style={{ width: '20px', height: '20px' }}>
               <path

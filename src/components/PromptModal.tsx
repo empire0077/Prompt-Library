@@ -249,22 +249,22 @@ export default function PromptModal({
   };
 
   return (
-    <div id="prompt-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-      <div id="prompt-modal-container" className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 my-8">
+    <div id="prompt-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+      <div id="prompt-modal-container" className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-101 dark:border-slate-800 my-8">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-lg bg-purple-50 text-purple-600">
+            <span className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
               <Layers className="w-5 h-5" />
             </span>
-            <h2 className="font-bold text-slate-800 text-sm">
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
               {prompt ? 'แก้ไขข้อมูลโครงสร้างคำสั่ง AI' : 'สร้างและจัดเก็บคำสั่งใหม่ลงในคลังของคุณ'}
             </h2>
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors cursor-pointer"
             style={{ width: '32px', height: '32px' }}
           >
             <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mx-auto">
@@ -276,7 +276,7 @@ export default function PromptModal({
         {/* Content Column Split Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 border border-red-150 rounded-xl text-xs font-medium">
+            <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-150 dark:border-red-900/40 rounded-xl text-xs font-medium">
               ⚠️ {error}
             </div>
           )}
@@ -284,34 +284,34 @@ export default function PromptModal({
           {/* Section 1: Metadata Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-1">
-              <label className="text-xs font-semibold text-slate-700">ชื่อหัวข้อโครงสร้างคำสั่ง (Title) <span className="text-red-500">*</span></label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">ชื่อหัวข้อโครงสร้างคำสั่ง (Title) <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="เช่น [ฝ่ายจัดหา] สรุปหลักเกณฑ์การยื่นซองสอบ TOR..."
-                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans"
+                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-805 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
               />
             </div>
 
             <div className="col-span-2 space-y-1">
-              <label className="text-xs font-semibold text-slate-700">รายละเอียดคำอธิบาย (Description)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">รายละเอียดคำอธิบาย (Description)</label>
               <textarea
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="เช่น ใช้แปลงข้อมูลดิบของข้อตกลงเอกสารประกวดราคาที่มีพารามิเตอร์..."
-                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans"
+                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-805 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between items-center h-5">
-                <label className="text-xs font-semibold text-slate-700">หมวดหมู่เป้าหมาย (Category)</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">หมวดหมู่เป้าหมาย (Category)</label>
                 <button
                   type="button"
                   onClick={() => setIsAddingCategory(!isAddingCategory)}
-                  className="text-purple-600 hover:text-purple-800 text-[10px] font-bold flex items-center gap-0.5"
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
                 >
                   <Plus className="w-2.5 h-2.5" />
                   <span>เพิ่มหมวดหมู่ใหม่</span>
@@ -325,14 +325,14 @@ export default function PromptModal({
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     placeholder="ป้อนชื่อหมวดหมู่..."
-                    className="flex-1 text-xs p-2 border border-purple-200 rounded-xl focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans"
+                    className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-805 dark:text-slate-200"
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={handleCreateCategory}
                     disabled={submittingCat}
-                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0"
+                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0 cursor-pointer"
                   >
                     {submittingCat ? '...' : 'เพิ่ม'}
                   </button>
@@ -342,7 +342,7 @@ export default function PromptModal({
                       setIsAddingCategory(false);
                       setNewCategoryName('');
                     }}
-                    className="px-2 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 text-[11px] font-bold rounded-lg transition-all shrink-0"
+                    className="px-2 py-2 border border-slate-200 dark:border-slate-805 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold rounded-lg transition-all shrink-0 cursor-pointer"
                   >
                     ยกเลิก
                   </button>
@@ -351,10 +351,10 @@ export default function PromptModal({
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white"
+                  className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-805 dark:text-slate-205 cursor-pointer"
                 >
                   {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    <option key={cat.id} value={cat.id} className="dark:bg-slate-900">{cat.name}</option>
                   ))}
                 </select>
               )}
@@ -362,11 +362,11 @@ export default function PromptModal({
 
             <div className="space-y-1">
               <div className="flex justify-between items-center h-5">
-                <label className="text-xs font-semibold text-slate-700">โมเดล AI ที่แนะนำ (AI Model Vendor)</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">โมเดล AI ที่แนะนำ (AI Model Vendor)</label>
                 <button
                   type="button"
                   onClick={() => setIsAddingTool(!isAddingTool)}
-                  className="text-purple-600 hover:text-purple-800 text-[10px] font-bold flex items-center gap-0.5"
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
                 >
                   <Plus className="w-2.5 h-2.5" />
                   <span>เพิ่มโมเดล AI ใหม่</span>
@@ -380,14 +380,14 @@ export default function PromptModal({
                     value={newToolName}
                     onChange={(e) => setNewToolName(e.target.value)}
                     placeholder="ป้อนชื่อโมเดล..."
-                    className="flex-1 text-xs p-2 border border-purple-200 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans"
+                    className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-805 dark:text-slate-200"
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={handleCreateTool}
                     disabled={submittingTool}
-                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0"
+                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0 cursor-pointer"
                   >
                     {submittingTool ? '...' : 'เพิ่ม'}
                   </button>
@@ -397,7 +397,7 @@ export default function PromptModal({
                       setIsAddingTool(false);
                       setNewToolName('');
                     }}
-                    className="px-2 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 text-[11px] font-bold rounded-lg transition-all shrink-0"
+                    className="px-2 py-2 border border-slate-200 dark:border-slate-805 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold rounded-lg transition-all shrink-0 cursor-pointer"
                   >
                     ยกเลิก
                   </button>
@@ -406,14 +406,14 @@ export default function PromptModal({
                 <div className="space-y-1.5">
                   {/* Selected badges list */}
                   {selectedToolIds.length > 0 && (
-                    <div className="flex flex-wrap gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100 min-h-[38px] items-center">
+                    <div className="flex flex-wrap gap-1 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-850 min-h-[38px] items-center">
                       {selectedToolIds.map((tid) => {
                         const tool = tools.find((t) => t.id === tid);
                         if (!tool) return null;
                         return (
                           <span
                             key={tid}
-                            className="inline-flex items-center gap-1 px-2.5 base-badge py-0.5 rounded-lg text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-100 transition-all"
+                            className="inline-flex items-center gap-1 px-2.5 base-badge py-0.5 rounded-lg text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-750 dark:text-purple-300 border border-purple-100 dark:border-purple-900/50 transition-all"
                           >
                             <span>{tool.name}</span>
                             <button
@@ -439,11 +439,11 @@ export default function PromptModal({
                         setSelectedToolIds((prev) => [...prev, val]);
                       }
                     }}
-                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white"
+                    className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-805 dark:text-slate-205 cursor-pointer"
                   >
-                    <option value="" disabled>-- เลือกโมเดล AI เพื่อแนะนำเพิ่มเติม --</option>
+                    <option value="" disabled className="dark:bg-slate-900">-- เลือกโมเดล AI เพื่อแนะนำเพิ่มเติม --</option>
                     {tools.map((t) => (
-                      <option key={t.id} value={t.id} disabled={selectedToolIds.includes(t.id)}>
+                      <option key={t.id} value={t.id} disabled={selectedToolIds.includes(t.id)} className="dark:bg-slate-900">
                         {t.name} {t.category ? `(${t.category})` : ''}
                       </option>
                     ))}
@@ -453,9 +453,9 @@ export default function PromptModal({
             </div>
 
             <div className="space-y-1 col-span-2">
-              <label className="text-xs font-semibold text-slate-700 block mb-1">ขอบเขตการแชร์ใช้งาน (Visibility)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">ขอบเขตการแชร์ใช้งาน (Visibility)</label>
               <div className="flex gap-4">
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-medium cursor-pointer">
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer select-none">
                   <input
                     type="radio"
                     name="visibility"
@@ -466,7 +466,7 @@ export default function PromptModal({
                   />
                   <span>Public (เผยแพร่ให้พนักงานทุกคนใช้งาน)</span>
                 </label>
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-medium cursor-pointer">
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer select-none">
                   <input
                     type="radio"
                     name="visibility"
@@ -487,13 +487,13 @@ export default function PromptModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">โครงสร้างกล่องข้อความ (Prompt Code Blocks)</h4>
-                <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">ประกอบร่างคำสั่งด้วยโครงสีบล็อก (System และ User) เพื่อความเป็นสัดส่วน</p>
+                <h4 className="font-bold text-slate-800 dark:text-slate-250 text-xs uppercase tracking-wider">โครงสร้างกล่องข้อความ (Prompt Code Blocks)</h4>
+                <p className="text-[10px] text-slate-400 dark:text-slate-450 mt-0.5 leading-normal">ประกอบร่างคำสั่งด้วยโครงสีบล็อก (System และ User) เพื่อความเป็นสัดส่วน</p>
               </div>
               <button
                 type="button"
                 onClick={handleAddBlock}
-                className="flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all"
+                className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50 hover:bg-purple-100 dark:hover:bg-purple-900/40 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>เพิ่มบล็อก</span>
@@ -502,24 +502,24 @@ export default function PromptModal({
 
             <div className="space-y-3">
               {blocks.map((block, idx) => (
-                <div key={idx} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2 relative pl-6">
+                <div key={idx} className="p-4 border border-slate-200 dark:border-slate-805 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 space-y-2 relative pl-6">
                   {/* Side strip colored tags */}
                   <div className={`absolute top-0 left-0 bottom-0 w-1.5 rounded-l-xl ${
-                    block.block_type === 'system' ? 'bg-amber-200' :
-                    block.block_type === 'user' ? 'bg-blue-200' :
-                    block.block_type === 'instruction' ? 'bg-purple-200' : 'bg-fuchsia-300'
+                    block.block_type === 'system' ? 'bg-amber-200 dark:bg-amber-550' :
+                    block.block_type === 'user' ? 'bg-blue-200 dark:bg-blue-550' :
+                    block.block_type === 'instruction' ? 'bg-purple-200 dark:bg-purple-550' : 'bg-fuchsia-300'
                   }`}></div>
 
                   <div className="flex items-center gap-3">
                     <select
                       value={block.block_type}
                       onChange={(e) => handleBlockChange(idx, 'block_type', e.target.value)}
-                      className="text-xs p-1 px-2 border border-slate-250 bg-white rounded font-bold uppercase transition-all"
+                      className="text-xs p-1 px-2 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded font-bold uppercase transition-all dark:text-slate-200 cursor-pointer"
                     >
-                      <option value="system">System Block</option>
-                      <option value="user">User Block</option>
-                      <option value="instruction">Instruction Block</option>
-                      <option value="skill">Skill Block</option>
+                      <option value="system" className="dark:bg-slate-900">System Block</option>
+                      <option value="user" className="dark:bg-slate-900">User Block</option>
+                      <option value="instruction" className="dark:bg-slate-900">Instruction Block</option>
+                      <option value="skill" className="dark:bg-slate-900">Skill Block</option>
                     </select>
 
                     <input
@@ -527,14 +527,14 @@ export default function PromptModal({
                       value={block.name || ''}
                       onChange={(e) => handleBlockChange(idx, 'name', e.target.value)}
                       placeholder="เช่น Role Directive..."
-                      className="flex-1 text-xs p-1 px-3 border border-slate-200 rounded font-bold"
+                      className="flex-1 text-xs p-1 px-3 border border-slate-200 dark:border-slate-800 rounded font-bold bg-white dark:bg-slate-900 text-slate-805 dark:text-slate-202 placeholder-slate-400 dark:placeholder-slate-650"
                     />
 
                     {blocks.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveBlock(idx)}
-                        className="p-1 px-2 bg-red-50 text-red-500 rounded border border-red-100 hover:bg-red-100 text-[10px] font-bold"
+                        className="p-1 px-2 bg-red-50 dark:bg-red-950/20 text-red-500 rounded border border-red-100 dark:border-red-900/40 hover:bg-red-100 text-[10px] font-bold cursor-pointer"
                       >
                         ลบ
                       </button>
@@ -546,26 +546,26 @@ export default function PromptModal({
                     value={block.content || ''}
                     onChange={(e) => handleBlockChange(idx, 'content', e.target.value)}
                     placeholder="กรุณาป้อนข้อกำหนด และสามารถแทรก {ตัวแปร} เพื่อรอให้ผู้ใช้คีย์ช่องสวมเข้า..."
-                    className="w-full text-xs p-3 bg-white border border-slate-200 rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-200 focus:outline-none font-mono"
+                    className="w-full text-xs p-3 bg-white dark:bg-slate-950/40 border border-slate-200 dark:border-slate-808 rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-200 focus:outline-none font-mono text-slate-805 dark:text-slate-200 placeholder-slate-450 dark:placeholder-slate-600"
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-100 dark:border-slate-800" />
 
           {/* Section 3: Variables Builder */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">ตัวแปรสอดช่อง (Template Variables)</h4>
-                <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">ใส่ตัวแปรที่คุณเขียนครอบวงเล็บปีกกาข้างบน เพื่อให้ระบบสร้างแบบฟอร์มคีย์ข้อมูลป้อนใหม่อัตโนมัติ</p>
+                <h4 className="font-bold text-slate-800 dark:text-slate-250 text-xs uppercase tracking-wider">ตัวแปรสอดช่อง (Template Variables)</h4>
+                <p className="text-[10px] text-slate-400 dark:text-slate-455 mt-0.5 leading-normal">ใส่ตัวแปรที่คุณเขียนครอบวงเล็บปีกกาข้างบน เพื่อให้ระบบสร้างแบบฟอร์มคีย์ข้อมูลป้อนใหม่อัตโนมัติ</p>
               </div>
               <button
                 type="button"
                 onClick={handleAddVariable}
-                className="flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all"
+                className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50 hover:bg-purple-100 dark:hover:bg-purple-900/40 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>เพิ่มพารามิเตอร์ตัวแปร</span>
@@ -573,28 +573,28 @@ export default function PromptModal({
             </div>
 
             {variables.length === 0 ? (
-              <div className="text-center py-4 bg-slate-50 border border-slate-100 border-dashed rounded-xl text-slate-400 font-semibold text-[11px]">
+              <div className="text-center py-4 bg-slate-50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 border-dashed rounded-xl text-slate-400 dark:text-slate-500 font-semibold text-[11px]">
                 ไม่มีตัวแปรเสริม (คำสั่งของท่านเป็นแบบเทมเพลตนิ่งสมบูรณ์)
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 pb-4">
                 {variables.map((v, idx) => (
-                  <div key={idx} className="p-3 border border-slate-200 rounded-xl space-y-2 relative bg-white">
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+                  <div key={idx} className="p-3 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 relative bg-white dark:bg-slate-950/10">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1.5">
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-slate-400 font-bold">#{idx + 1}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-550 font-bold">#{idx + 1}</span>
                         <input
                           type="text"
                           value={v.name || ''}
                           onChange={(e) => handleVariableChange(idx, 'name', e.target.value.replaceAll(/[^a-zA-Z0-9_]/g, ''))}
                           placeholder="ชื่อตัวเลือกระบบ เช่น raw_text"
-                          className="text-xs p-0.5 border-b border-purple-200 font-bold font-mono text-purple-650 focus:outline-none"
+                          className="text-xs p-0.5 border-b border-purple-200 dark:border-purple-900 font-bold font-mono text-purple-650 dark:text-purple-400 focus:outline-none bg-transparent"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveVariable(idx)}
-                        className="p-1 hover:text-red-500 rounded transition-all text-slate-400"
+                        className="p-1 hover:text-red-500 rounded transition-all text-slate-400 dark:text-slate-555 dark:hover:text-red-400 cursor-pointer"
                       >
                         <Trash className="w-3.5 h-3.5" />
                       </button>
@@ -602,29 +602,29 @@ export default function PromptModal({
 
                     <div className="grid grid-cols-2 gap-2 text-[10px]">
                       <div>
-                        <span className="text-[9px] font-bold text-slate-500">ป้ายแสดง (Label)</span>
+                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-450">ป้ายแสดง (Label)</span>
                         <input
                           type="text"
                           value={v.label || ''}
                           onChange={(e) => handleVariableChange(idx, 'label', e.target.value)}
                           placeholder="ป้ายชื่อช่องกรอก..."
-                          className="w-full text-xs p-1 border border-slate-150 rounded"
+                          className="w-full text-xs p-1 border border-slate-150 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-805 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
                         />
                       </div>
                       <div>
-                        <span className="text-[9px] font-bold text-slate-500">คำใบ้ (Placeholder)</span>
+                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-450">คำใบ้ (Placeholder)</span>
                         <input
                           type="text"
                           value={v.placeholder || ''}
                           onChange={(e) => handleVariableChange(idx, 'placeholder', e.target.value)}
                           placeholder="คำใบ้..."
-                          className="w-full text-xs p-1 border border-slate-150 rounded"
+                          className="w-full text-xs p-1 border border-slate-150 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-805 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
                         />
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 pt-1">
-                      <label className="text-[10px] text-slate-500 font-medium flex items-center gap-1 cursor-pointer select-none">
+                      <label className="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={!!v.is_required}
@@ -642,15 +642,15 @@ export default function PromptModal({
         </form>
 
         {/* Footer actions bar */}
-        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
-          <div className="text-[10px] text-slate-400 font-medium">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/40">
+          <div className="text-[10px] text-slate-400 dark:text-slate-550 font-medium">
             โครงสร้างข้อมูลได้รับการปกป้องและรองรับการเก็บ Caching เพื่อความรวดเร็วและปลอดภัย
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 font-semibold rounded-lg text-xs transition-all"
+              className="px-4 py-2 border border-slate-200 dark:border-slate-805 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-805 font-semibold rounded-lg text-xs transition-all cursor-pointer"
             >
               ยกเลิก
             </button>
@@ -658,7 +658,7 @@ export default function PromptModal({
               type="button"
               disabled={loading}
               onClick={handleSubmit}
-              className="flex items-center gap-1.5 py-2 px-5 font-bold text-white shadow-md rounded-xl pea-gradient hover:opacity-95 text-xs transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 py-2 px-5 font-bold text-white shadow-md rounded-xl pea-gradient hover:opacity-95 text-xs transition-all disabled:opacity-50 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{prompt ? 'อัปเดตคำสั่ง' : 'บันทึกคำสั่งขึ้นชั้นคลัง AI'}</span>

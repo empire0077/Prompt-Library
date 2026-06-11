@@ -97,22 +97,22 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
   };
 
   return (
-    <div id="use-template-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div id="use-template-modal-container" className="bg-white rounded-2xl shadow-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+    <div id="use-template-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm">
+      <div id="use-template-modal-container" className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800/80">
         
         {/* Modal Top Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/40">
           <div>
-            <span className="text-[9px] text-purple-600 font-bold uppercase tracking-wider block mb-0.5">
+            <span className="text-[9px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider block mb-0.5">
               ระบบสวมเทมเพลตพร้อมใช้งาน (Prompt Composer)
             </span>
-            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 truncate">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2 truncate">
               {prompt.title}
             </h2>
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
             style={{ width: '32px', height: '32px' }}
           >
             <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mx-auto">
@@ -123,8 +123,8 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
 
         {/* Modal Main Scroll Area Split */}
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-450 gap-3">
-            <svg className="animate-spin h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-450 dark:text-slate-400 gap-3">
+            <svg className="animate-spin h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
@@ -133,16 +133,16 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
         ) : (
           <div className="flex-1 flex overflow-hidden">
             {/* Left Column: Form Fields Variables Panel */}
-            <div className="w-1/2 overflow-y-auto p-6 border-r border-slate-100 space-y-5">
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-50">
-                <FileText className="w-4 h-4 text-purple-600" />
-                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+            <div className="w-1/2 overflow-y-auto p-6 border-r border-slate-100 dark:border-slate-800 space-y-5 bg-white dark:bg-slate-900/50">
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-50 dark:border-slate-800">
+                <FileText className="w-4 h-4 text-purple-600 dark:text-purple-450" />
+                <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">
                   กรอกตัวแปรในวงเล็บปีกกา
                 </h4>
               </div>
 
               {variables.length === 0 ? (
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-450 leading-relaxed">
+                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-455 dark:text-slate-400 leading-relaxed">
                   โครงสร้างคำสั่งนี้ไม่มีตัวแปรเสริม คุณสามารถสกัดและก๊อปปี้บล็อกสมบูรณ์พล็อตด่วนได้ทันทีที่แผงด้านข้าง
                 </div>
               ) : (
@@ -150,19 +150,19 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
                   {variables.map((variable) => (
                     <div key={variable.id} className="space-y-1">
                       <div className="flex items-center justify-between text-xs font-semibold">
-                        <label className="text-slate-700 flex items-center gap-1.5 leading-tight">
+                        <label className="text-slate-700 dark:text-slate-350 flex items-center gap-1.5 leading-tight">
                           <span>{variable.label || variable.name}</span>
                           {variable.is_required && (
                             <span className="text-red-500 text-[10px]">*</span>
                           )}
                         </label>
-                        <span className="text-[9px] font-mono text-purple-500 bg-purple-50 px-1 rounded">
+                        <span className="text-[9px] font-mono text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-1 rounded">
                           {`{${variable.name}}`}
                         </span>
                       </div>
                       
                       {variable.description && (
-                        <div className="text-[10px] text-slate-400 font-medium pb-0.5">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium pb-0.5">
                           {variable.description}
                         </div>
                       )}
@@ -172,7 +172,7 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
                         value={values[variable.name] || ''}
                         onChange={(e) => handleInputChange(variable.name, e.target.value)}
                         placeholder={variable.placeholder || 'ระบุรายละเอียด...'}
-                        className="w-full text-xs p-3 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans placeholder-slate-400"
+                        className="w-full text-xs p-3 bg-slate-50 dark:bg-slate-950/20 rounded-xl border border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-550"
                       />
                     </div>
                   ))}
@@ -181,15 +181,15 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
             </div>
 
             {/* Right Column: Live Update Output Preview Panel */}
-            <div className="w-1/2 overflow-hidden flex flex-col bg-slate-50/50">
-              <div className="p-4 border-b border-slate-150 flex items-center justify-between bg-slate-50">
+            <div className="w-1/2 overflow-hidden flex flex-col bg-slate-50/50 dark:bg-slate-950/40">
+              <div className="p-4 border-b border-slate-150 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/80">
                 <div className="flex items-center gap-2">
-                  <Play className="w-4 h-4 text-purple-600 fill-purple-600" />
-                  <span className="font-bold text-slate-700 text-xs">คำสั่งที่เรียบเรียงสำเร็จ (Compiled Prompt)</span>
+                  <Play className="w-4 h-4 text-purple-600 dark:text-purple-400 fill-purple-600 dark:fill-purple-400" />
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-xs text-left">คำสั่งที่เรียบเรียงสำเร็จ (Compiled Prompt)</span>
                 </div>
                 
                 {prompt.tool_name && (
-                  <span className="text-[9px] bg-white border border-slate-200 py-0.5 px-2 rounded-md font-mono text-slate-500 font-bold">
+                  <span className="text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-805 py-0.5 px-2 rounded-md font-mono text-slate-500 dark:text-slate-400 font-bold">
                     Target: {prompt.tool_name}
                   </span>
                 )}
@@ -206,16 +206,16 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
                   });
 
                   return (
-                    <div key={block.id} className="p-4 rounded-xl bg-white border border-slate-200 text-left leading-relaxed relative pl-6 group">
+                    <div key={block.id} className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left leading-relaxed relative pl-6 group">
                       {/* Left Block Line indicator tag */}
-                      <div className="absolute top-0 left-0 bottom-0 w-1.5 rounded-l-xl bg-purple-200 group-hover:bg-purple-500 transition-all"></div>
+                      <div className="absolute top-0 left-0 bottom-0 w-1.5 rounded-l-xl bg-purple-200 dark:bg-purple-900 group-hover:bg-purple-500 transition-all"></div>
                       
-                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-purple-600 tracking-wider mb-2 select-none">
+                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-purple-600 dark:text-purple-400 tracking-wider mb-2 select-none">
                         <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                         <span>{block.name || block.block_type}</span>
                       </div>
                       
-                      <pre className="whitespace-pre-wrap font-mono text-[11px] font-medium leading-relaxed">
+                      <pre className="whitespace-pre-wrap font-mono text-[11px] font-medium leading-relaxed text-slate-800 dark:text-slate-200">
                         {renderedTxt}
                       </pre>
                     </div>
@@ -227,23 +227,23 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
         )}
 
         {/* Modal Bottom control-bar block */}
-        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-white text-xs">
-          <div className="flex items-center gap-2 text-slate-400 font-semibold leading-none">
-            <Info className="w-4 h-4 text-purple-500 shrink-0" />
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 text-xs">
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 font-semibold leading-none text-left">
+            <Info className="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
             <span>กรอกเนื้อหาและกดปุ่มคัดลอกคำสั่งเพื่อไปรันต่อบนระบบ AI นอกได้ทันที</span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 hover:bg-slate-50 active:bg-slate-100 font-semibold rounded-lg transition-all"
+              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 font-semibold rounded-lg transition-all cursor-pointer"
             >
               ยกเลิก
             </button>
             <button
               onClick={handleCopyCompiled}
               disabled={loading}
-              className={`flex items-center gap-1.5 py-2 px-5 font-bold text-white shadow-md transition-all rounded-xl hover:-translate-y-0.5 active:translate-y-0 ${
+              className={`flex items-center gap-1.5 py-2 px-5 font-bold text-white shadow-md transition-all rounded-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
                 copied 
                   ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/10'
                   : 'pea-gradient hover:opacity-95 shadow-purple-500/10'
