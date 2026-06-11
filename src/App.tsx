@@ -254,10 +254,11 @@ export default function App() {
         onAddPrompt={handleAddPromptClick}
         onSignIn={() => setIsSignInOpen(true)}
         onSignOut={handleSignOut}
+        allPrompts={unfilteredPrompts.length > 0 ? unfilteredPrompts : prompts}
       />
 
       {/* Main Panel Area - shifted right with generous elegant padding to stand parallel with sidebar */}
-      <main className="flex-1 min-w-0 bg-slate-50 min-h-screen p-8 lg:p-12 pl-[352px] lg:pl-[384px] flex flex-col">
+      <main className="flex-1 min-w-0 bg-slate-50 min-h-screen pt-4 pb-8 px-8 lg:pt-6 lg:pb-12 lg:px-12 pl-[352px] lg:pl-[384px] flex flex-col">
         {/* Core Header Banner with stats metrics */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>

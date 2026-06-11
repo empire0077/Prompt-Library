@@ -1,9 +1,11 @@
 import React from 'react';
 import { 
   Plus, Search, Globe, Lock, Star, ChevronRight, BookOpen, 
-  Code, User, Edit3, Database, Tv, LogIn, LogOut, UserCheck
+  Code, User, Edit3, Database, Tv, LogIn, LogOut, UserCheck,
+  FileText, Briefcase, Cpu, TrendingUp, Palette, Shield, Server,
+  Zap, Headphones, Coins, BarChart2, Settings, Mail, Phone, Calendar, Wrench
 } from 'lucide-react';
-import { User as UserType, PromptCategory, Tool } from '../types';
+import { User as UserType, PromptCategory, Tool, Prompt } from '../types';
 import LogoIcon from './LogoIcon';
 
 interface SidebarProps {
@@ -28,6 +30,8 @@ interface SidebarProps {
   onAddPrompt: () => void;
   onSignIn: () => void;
   onSignOut: () => void;
+
+  allPrompts?: Prompt[];
 }
 
 export default function Sidebar({
@@ -44,11 +48,65 @@ export default function Sidebar({
   setSelectedTool,
   onAddPrompt,
   onSignIn,
-  onSignOut
+  onSignOut,
+  allPrompts = []
 }: SidebarProps) {
 
-  // Map database icon string keys to Lucide React component elements
-  const renderCategoryIcon = (iconName: string | null) => {
+  // Map category to matching Lucide React component elements based on name keywords or icon column
+  const renderCategoryIcon = (catName: string, iconName: string | null) => {
+    const name = catName.toLowerCase();
+    
+    // First, try matching based on keywords in category name
+    if (name.includes('โค้ด') || name.includes('code') || name.includes('พัฒนา') || name.includes('dev')) {
+      return <Code className="w-4 h-4" />;
+    }
+    if (name.includes('ฐานข้อมูล') || name.includes('database') || name.includes('sql') || name.includes('data')) {
+      return <Database className="w-4 h-4" />;
+    }
+    if (name.includes('ธุรการ') || name.includes('ทั่วไป') || name.includes('general') || name.includes('admin') || name.includes('จัดการ') || name.includes('งาน')) {
+      // Avoid matching other specific keywords unless generic
+      if (!name.includes('เอกสาร') && !name.includes('วิเคราะห์') && !name.includes('การเงิน') && !name.includes('บัญชี') && !name.includes('ความปลอดภัย') && !name.includes('ระบบ') && !name.includes('ไอที')) {
+        return <Briefcase className="w-4 h-4" />;
+      }
+    }
+    if (name.includes('วิศว') || name.includes('engineer') || name.includes('ไฟฟ้า') || name.includes('pea')) {
+      return <Cpu className="w-4 h-4" />;
+    }
+    if (name.includes('เอกสาร') || name.includes('รายงาน') || name.includes('doc') || name.includes('writer') || name.includes('เนื้อหา')) {
+      return <FileText className="w-4 h-4" />;
+    }
+    if (name.includes('วิเคราะห์') || name.includes('สถิติ') || name.includes('chart') || name.includes('analytics')) {
+      return <BarChart2 className="w-4 h-4" />;
+    }
+    if (name.includes('ความปลอดภัย') || name.includes('security') || name.includes('ตรวจสอบ') || name.includes('audit')) {
+      return <Shield className="w-4 h-4" />;
+    }
+    if (name.includes('ระบบ') || name.includes('server') || name.includes('it') || name.includes('ไอที') || name.includes('เครือข่าย') || name.includes('เน็ต')) {
+      return <Server className="w-4 h-4" />;
+    }
+    if (name.includes('อัตโนมัติ') || name.includes('automation') || name.includes('บอท') || name.includes('bot') || name.includes('zap') || name.includes('workflow')) {
+      return <Zap className="w-4 h-4" />;
+    }
+    if (name.includes('บริการ') || name.includes('ลูกค้า') || name.includes('support') || name.includes('สิทธิ์') || name.includes('ช่วยเหลือ')) {
+      return <Headphones className="w-4 h-4" />;
+    }
+    if (name.includes('การเงิน') || name.includes('บัญชี') || name.includes('เงิน') || name.includes('finance') || name.includes('budget')) {
+      return <Coins className="w-4 h-4" />;
+    }
+    if (name.includes('ออกแบบ') || name.includes('ดีไซน์') || name.includes('design') || name.includes('สร้างสรรค์') || name.includes('ศิลปะ') || name.includes('ภาพ')) {
+      return <Palette className="w-4 h-4" />;
+    }
+    if (name.includes('ตลาด') || name.includes('ขาย') || name.includes('โฆษณา') || name.includes('marketing') || name.includes('sales')) {
+      return <TrendingUp className="w-4 h-4" />;
+    }
+    if (name.includes('สไลด์') || name.includes('นำเสนอ') || name.includes('presentation') || name.includes('slide') || name.includes('ประชุม')) {
+      return <Tv className="w-4 h-4" />;
+    }
+    if (name.includes('เรียน') || name.includes('ศึกษา') || name.includes('อบรม') || name.includes('knowledge') || name.includes('know')) {
+      return <BookOpen className="w-4 h-4" />;
+    }
+
+    // Default to matching string-based icon if provided
     switch (iconName) {
       case 'user':
         return <User className="w-4 h-4" />;
@@ -66,6 +124,18 @@ export default function Sidebar({
         return <BookOpen className="w-4 h-4" />;
     }
   };
+
+  // Count how many prompts belong to each category
+  const countByCat = (catId: string) => {
+    return allPrompts.filter(p => p.category_id === catId).length;
+  };
+
+  // Sort categories by prompt count descending
+  const sortedCategories = [...categories].sort((a, b) => {
+    const countA = countByCat(a.id);
+    const countB = countByCat(b.id);
+    return countB - countA;
+  });
 
   return (
     <div id="app-sidebar" className="w-80 shrink-0 bg-white border-r border-slate-200 flex flex-col h-screen fixed top-0 left-0 z-20">
@@ -217,27 +287,40 @@ export default function Sidebar({
           </div>
 
           <div className="space-y-1">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === cat.id
-                    ? 'bg-purple-55 bg-purple-100 text-purple-800 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 text-left leading-tight truncate">
-                  <span className={selectedCategory === cat.id ? 'text-purple-600 scale-105' : 'text-slate-400'}>
-                    {renderCategoryIcon(cat.icon)}
-                  </span>
-                  <span className="truncate">{cat.name}</span>
-                </div>
-                {selectedCategory === cat.id && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0 ml-1"></span>
-                )}
-              </button>
-            ))}
+            {sortedCategories.map((cat) => {
+              const count = countByCat(cat.id);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    selectedCategory === cat.id
+                      ? 'bg-purple-100 text-purple-800 font-semibold shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 text-left leading-tight truncate mr-2">
+                    <span className={selectedCategory === cat.id ? 'text-purple-600 scale-105' : 'text-slate-400'}>
+                      {renderCategoryIcon(cat.name, cat.icon)}
+                    </span>
+                    <span className="truncate">{cat.name}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-tight ${
+                      selectedCategory === cat.id
+                        ? 'bg-purple-200 text-purple-900 border border-purple-300/30'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200/50'
+                    }`}>
+                      {count}
+                    </span>
+                    {selectedCategory === cat.id && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0"></span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

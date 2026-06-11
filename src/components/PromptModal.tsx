@@ -505,7 +505,9 @@ export default function PromptModal({
                 <div key={idx} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2 relative pl-6">
                   {/* Side strip colored tags */}
                   <div className={`absolute top-0 left-0 bottom-0 w-1.5 rounded-l-xl ${
-                    block.block_type === 'system' ? 'bg-amber-200' : 'bg-blue-200'
+                    block.block_type === 'system' ? 'bg-amber-200' :
+                    block.block_type === 'user' ? 'bg-blue-200' :
+                    block.block_type === 'instruction' ? 'bg-purple-200' : 'bg-fuchsia-300'
                   }`}></div>
 
                   <div className="flex items-center gap-3">
@@ -517,6 +519,7 @@ export default function PromptModal({
                       <option value="system">System Block</option>
                       <option value="user">User Block</option>
                       <option value="instruction">Instruction Block</option>
+                      <option value="skill">Skill Block</option>
                     </select>
 
                     <input

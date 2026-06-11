@@ -78,7 +78,7 @@ export interface PromptVersion {
 export interface PromptBlock {
   id: string;
   prompt_version_id: string;
-  block_type: 'system' | 'user' | 'instruction';
+  block_type: 'system' | 'user' | 'instruction' | 'skill';
   name: string | null;
   content: string;
   sort_order: number | null;
