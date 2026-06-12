@@ -12,6 +12,19 @@ interface PromptModalProps {
   onRefreshMasterData: () => Promise<void>;
 }
 
+const CATEGORY_TAG_PRESETS: Record<string, string[]> = {
+  'การตลาด': ['SEO', 'Copywriting', 'Slogan', 'Social Media', 'Email', 'Persona Analysis', 'Ad Copy'],
+  'ซอฟต์แวร์': ['Debug', 'Refactoring', 'Clean Code', 'SQL Query', 'HTML/CSS', 'System Architecture', 'Code Review'],
+  'ไอที': ['Debug', 'Refactoring', 'Clean Code', 'SQL Query', 'HTML/CSS', 'System Architecture', 'Code Review'],
+  'ธุรกิจ': ['SWOT', 'OKRs', 'Business Plan', 'Strategy', 'Project Management', 'Brainstorming'],
+  'ความเสี่ยง': ['ERM', 'SWOT', 'Risk Management', 'Go / No-Go', 'Risk Assessment', 'Compliance Checklist'],
+  'ความปลอดภัย': ['ERM', 'SWOT', 'Risk Management', 'Go / No-Go', 'Risk Assessment', 'Compliance Checklist'],
+  'แปลภาษา': ['Translation', 'Grammar Check', 'Summarization', 'Vocabulary Improvement', 'Academic Tone'],
+  'การศึกษา': ['Translation', 'Grammar Check', 'Summarization', 'Vocabulary Improvement', 'Academic Tone'],
+  'ออกแบบ': ['UI/UX Brief', 'Logo Prompt', 'Wireframing', 'Color Palette', 'Midjourney', 'Stable Diffusion'],
+  'ทั่วไป': ['Chatting', 'Summarize', 'Q&A', 'Brainstorming', 'Proofreading']
+};
+
 export default function PromptModal({
   isOpen,
   onClose,
@@ -27,6 +40,8 @@ export default function PromptModal({
   // Form Fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [primaryToolId, setPrimaryToolId] = useState('');
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
@@ -122,6 +137,11 @@ export default function PromptModal({
       setDescription(prompt.description || '');
       setCategoryId(prompt.category_id || '');
       setPrimaryToolId(prompt.primary_tool_id || '');
+      if (prompt.tags_csv) {
+        setTags(prompt.tags_csv.split(',').map((s: string) => s.trim()).filter(Boolean));
+      } else {
+        setTags([]);
+      }
       
       // Initialize selectedToolIds
       if (prompt.tool_ids) {
@@ -167,6 +187,8 @@ export default function PromptModal({
       setVariables([
         { name: 'input_text', label: 'ข้อความเข้า', placeholder: 'เช่น บันทึกสรุปงาน...', is_required: true, sort_order: 1 }
       ]);
+      setTags([]);
+      setTagInput('');
     }
   }, [isOpen, prompt, categories, tools]);
 
@@ -220,7 +242,8 @@ export default function PromptModal({
       tool_ids: selectedToolIds,
       visibility,
       blocks,
-      variables
+      variables,
+      tags_csv: tags.join(',')
     };
 
     try {
@@ -290,7 +313,7 @@ export default function PromptModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="เช่น [ฝ่ายจัดหา] สรุปหลักเกณฑ์การยื่นซองสอบ TOR..."
-                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
+                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
@@ -301,185 +324,325 @@ export default function PromptModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="เช่น ใช้แปลงข้อมูลดิบของข้อตกลงเอกสารประกวดราคาที่มีพารามิเตอร์..."
-                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
+                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center h-5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">หมวดหมู่เป้าหมาย (Category)</label>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingCategory(!isAddingCategory)}
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
-                >
-                  <Plus className="w-2.5 h-2.5" />
-                  <span>เพิ่มหมวดหมู่ใหม่</span>
-                </button>
-              </div>
+            {/* Split layout for categorization and models */}
+            <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/30 dark:bg-slate-950/10 p-5 rounded-2xl border border-slate-100 dark:border-slate-800/60 shadow-sm">
               
-              {isAddingCategory ? (
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="ป้อนชื่อหมวดหมู่..."
-                    className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    disabled={submittingCat}
-                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0 cursor-pointer"
-                  >
-                    {submittingCat ? '...' : 'เพิ่ม'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddingCategory(false);
-                      setNewCategoryName('');
-                    }}
-                    className="px-2 py-2 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold rounded-lg transition-all shrink-0 cursor-pointer"
-                  >
-                    ยกเลิก
-                  </button>
+              {/* Left Column: Category & Sub-category Step Flow */}
+              <div className="space-y-4 md:border-r md:border-slate-100 dark:md:border-slate-800/60 md:pr-6">
+                <div className="flex items-center gap-1.5 mb-1 bg-purple-50/60 dark:bg-purple-950/20 px-2.5 py-1.5 rounded-lg w-fit">
+                  <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide">ขั้นตอนจัดหมวดหมู่และแท็กย่อย</span>
                 </div>
-              ) : (
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
-                >
-                  {[...categories]
-                    .sort((a, b) => a.name.localeCompare(b.name, 'th'))
-                    .map((cat) => (
-                      <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">{cat.name}</option>
-                    ))}
-                </select>
-              )}
-            </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center h-5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">โมเดล AI ที่แนะนำ (AI Model Vendor)</label>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingTool(!isAddingTool)}
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
-                >
-                  <Plus className="w-2.5 h-2.5" />
-                  <span>เพิ่มโมเดล AI ใหม่</span>
-                </button>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center h-5">
+                    <label className="text-xs font-bold text-slate-850 dark:text-slate-200">1. หมวดหมู่หลัก (Main Category) <span className="text-red-500">*</span></label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCategory(!isAddingCategory)}
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                      <span>เพิ่มหมวดหมู่ใหม่</span>
+                    </button>
+                  </div>
+                  
+                  {isAddingCategory ? (
+                    <div className="flex gap-1.5 items-center">
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="ป้อนชื่อหมวดหมู่..."
+                        className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        disabled={submittingCat}
+                        className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0 cursor-pointer"
+                      >
+                        {submittingCat ? '...' : 'เพิ่ม'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingCategory(false);
+                          setNewCategoryName('');
+                        }}
+                        className="px-2 py-2 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold rounded-lg transition-all shrink-0 cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                      className="w-full text-xs p-2.5 border border-purple-300 dark:border-purple-900/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
+                    >
+                      {[...categories]
+                        .sort((a, b) => a.name.localeCompare(b.name, 'th'))
+                        .map((cat) => (
+                          <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">{cat.name}</option>
+                        ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Visual Connector Guidance */}
+                <div className="flex justify-center -my-1">
+                  <div className="h-6 w-0.5 border-r border-dashed border-purple-400 dark:border-purple-600/50 flex items-center justify-center relative">
+                    <span className="text-[8px] font-black px-1 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-750 dark:text-purple-300 transform scale-90 translate-x-px border border-purple-200/50 dark:border-purple-800/45 absolute">
+                      ▼
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sub-categories (Preset & custom tags) */}
+                {(() => {
+                  const selectedCat = categories.find(c => c.id === categoryId);
+                  const selectedCatName = selectedCat ? selectedCat.name : '';
+                  const matchKey = Object.keys(CATEGORY_TAG_PRESETS).find(key => selectedCatName.includes(key));
+                  const suggestedPresets = matchKey ? CATEGORY_TAG_PRESETS[matchKey] : ['General', 'Idea Generation', 'Research', 'Strategy', 'Creative'];
+
+                  return (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-850 dark:text-slate-200 block">
+                        2. เลือกแท็กย่อย / Sub-categories (ช่วยเพิ่มความแม่นยําระบบค้นหาและจัดแบ่งกลุ่มงานย่อย)
+                      </label>
+                      <div className="space-y-1.5 p-3.5 rounded-xl border-2 border-purple-200 dark:border-purple-900/40 bg-purple-500/5 dark:bg-purple-950/15">
+                        {/* Chips layout */}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {tags.length === 0 ? (
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium italic">ยังไม่ได้ใส่แท็ก (เลือกแท็กด่วนแนะนำได้ที่ป้ายสีม่วงด้านล่าง)</span>
+                        ) : (
+                          tags.map(tag => (
+                            <span 
+                              key={tag} 
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-600 dark:bg-purple-600 text-white border border-purple-605 shadow-sm"
+                            >
+                              <span>#{tag}</span>
+                              <button
+                                type="button"
+                                onClick={() => setTags(prev => prev.filter(t => t !== tag))}
+                                className="hover:text-red-200 transition-colors text-[10px] font-extrabold focus:outline-none cursor-pointer"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Manual Type Box */}
+                      <div className="flex gap-1.5 items-center">
+                        <input
+                          type="text"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const val = tagInput.trim();
+                              if (val && !tags.includes(val)) {
+                                setTags(prev => [...prev, val]);
+                                setTagInput('');
+                              }
+                            }
+                          }}
+                          placeholder="พิมพ์แท็กย่อยอื่นแล้วกด Enter เพื่อบันทึก..."
+                          className="flex-1 text-[11px] p-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const val = tagInput.trim();
+                            if (val && !tags.includes(val)) {
+                              setTags(prev => [...prev, val]);
+                              setTagInput('');
+                            }
+                          }}
+                          className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold rounded-lg transition-all cursor-pointer shrink-0"
+                        >
+                          เพิ่มแท็ก
+                        </button>
+                      </div>
+
+                      {/* Suggest Preset chips */}
+                      {suggestedPresets.length > 0 && (
+                        <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/60">
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">แท็กแนะนำสำหรับหมวดหมู่นี้:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {suggestedPresets.map(preset => {
+                              const isSelected = tags.includes(preset);
+                              return (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setTags(prev => prev.filter(t => t !== preset));
+                                    } else {
+                                      setTags(prev => [...prev, preset]);
+                                    }
+                                  }}
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-purple-600 border border-purple-650 text-white shadow-sm'
+                                      : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                                  }`}
+                                >
+                                  {preset}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    </div>
+                  );
+                })()}
               </div>
 
-              {isAddingTool ? (
-                <div className="flex gap-1.5 items-center">
-                  <input
-                    type="text"
-                    value={newToolName}
-                    onChange={(e) => setNewToolName(e.target.value)}
-                    placeholder="ป้อนชื่อโมเดล..."
-                    className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCreateTool}
-                    disabled={submittingTool}
-                    className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0 cursor-pointer"
-                  >
-                    {submittingTool ? '...' : 'เพิ่ม'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddingTool(false);
-                      setNewToolName('');
-                    }}
-                    className="px-2 py-2 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold rounded-lg transition-all shrink-0 cursor-pointer"
-                  >
-                    ยกเลิก
-                  </button>
+              {/* Right Column: Recommended AI Model Vendor & Visibility settings */}
+              <div className="space-y-4 bg-slate-50/70 dark:bg-slate-900/40 p-4.5 rounded-2xl border border-slate-100/80 dark:border-slate-800/40 shadow-inner">
+                <div className="flex items-center gap-1.5 mb-1 bg-purple-50/60 dark:bg-purple-950/20 px-2.5 py-1.5 rounded-lg w-fit">
+                  <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide">โมเดล AI และความปลอดภัย</span>
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {/* Selected badges list */}
-                  {selectedToolIds.length > 0 && (
-                    <div className="flex flex-wrap gap-1 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-850 min-h-[38px] items-center">
-                      {selectedToolIds.map((tid) => {
-                        const tool = tools.find((t) => t.id === tid);
-                        if (!tool) return null;
-                        return (
-                          <span
-                            key={tid}
-                            className="inline-flex items-center gap-1 px-2.5 base-badge py-0.5 rounded-lg text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-750 dark:text-purple-300 border border-purple-100 dark:border-purple-900/50 transition-all"
-                          >
-                            <span>{tool.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedToolIds((prev) => prev.filter((id) => id !== tid))}
-                              className="text-purple-400 hover:text-purple-600 font-bold transition-colors cursor-pointer shrink-0 ml-1"
-                              title="ลบออก"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        );
-                      })}
+
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center h-5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">โมเดล AI ที่แนะนำ (AI Model Vendor)</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingTool(!isAddingTool)}
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                      <span>เพิ่มโมเดล AI ใหม่</span>
+                    </button>
+                  </div>
+
+                  {isAddingTool ? (
+                    <div className="flex gap-1.5 items-center">
+                      <input
+                        type="text"
+                        value={newToolName}
+                        onChange={(e) => setNewToolName(e.target.value)}
+                        placeholder="ป้อนชื่อโมเดล..."
+                        className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateTool}
+                        disabled={submittingTool}
+                        className="px-2.5 py-2 bg-purple-600 text-white text-[11px] font-bold rounded-lg hover:bg-purple-700 transition-all shrink-0 cursor-pointer"
+                      >
+                        {submittingTool ? '...' : 'เพิ่ม'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingTool(false);
+                          setNewToolName('');
+                        }}
+                        className="px-2 py-2 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold rounded-lg transition-all shrink-0 cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {/* Selected badges list */}
+                      {selectedToolIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-850 min-h-[38px] items-center">
+                          {selectedToolIds.map((tid) => {
+                            const tool = tools.find((t) => t.id === tid);
+                            if (!tool) return null;
+                            return (
+                              <span
+                                key={tid}
+                                className="inline-flex items-center gap-1 px-2.5 base-badge py-0.5 rounded-lg text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-755 dark:text-purple-300 border border-purple-100 dark:border-purple-900/50 transition-all"
+                              >
+                                <span>{tool.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedToolIds((prev) => prev.filter((id) => id !== tid))}
+                                  className="text-purple-400 hover:text-purple-600 font-bold transition-colors cursor-pointer shrink-0 ml-1"
+                                  title="ลบออก"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Select box block */}
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val && !selectedToolIds.includes(val)) {
+                            setSelectedToolIds((prev) => [...prev, val]);
+                          }
+                        }}
+                        className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
+                      >
+                        <option value="" disabled className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- เลือกโมเดล AI เพื่อแนะนำเพิ่มเติม --</option>
+                        {tools.map((t) => (
+                          <option key={t.id} value={t.id} disabled={selectedToolIds.includes(t.id)} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                            {t.name} {t.category ? `(${t.category})` : ''}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
-
-                  {/* Select box block */}
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val && !selectedToolIds.includes(val)) {
-                        setSelectedToolIds((prev) => [...prev, val]);
-                      }
-                    }}
-                    className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
-                  >
-                    <option value="" disabled className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- เลือกโมเดล AI เพื่อแนะนำเพิ่มเติม --</option>
-                    {tools.map((t) => (
-                      <option key={t.id} value={t.id} disabled={selectedToolIds.includes(t.id)} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
-                        {t.name} {t.category ? `(${t.category})` : ''}
-                      </option>
-                    ))}
-                  </select>
                 </div>
-              )}
-            </div>
 
-            <div className="space-y-1 col-span-2">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">ขอบเขตการแชร์ใช้งาน (Visibility)</label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer select-none">
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="public"
-                    checked={visibility === 'public'}
-                    onChange={() => setVisibility('public')}
-                    className="accent-purple-600 cursor-pointer"
-                  />
-                  <span>Public (เผยแพร่ให้พนักงานทุกคนใช้งาน)</span>
-                </label>
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer select-none">
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="private"
-                    checked={visibility === 'private'}
-                    onChange={() => setVisibility('private')}
-                    className="accent-purple-600 cursor-pointer"
-                  />
-                  <span>Private (ส่วนตัวสำหรับฉันคนเดียว)</span>
-                </label>
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">ขอบเขตการแชร์ใช้งาน (Visibility)</label>
+                  <div className="flex gap-4 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850">
+                    <label className="flex-1 flex items-center gap-1.5 text-xs text-slate-650 dark:text-slate-300 font-medium cursor-pointer select-none">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="public"
+                        checked={visibility === 'public'}
+                        onChange={() => setVisibility('public')}
+                        className="accent-purple-600 cursor-pointer"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[11px]">Public Draft</span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500">สำหรับทุกคนในทีม</span>
+                      </div>
+                    </label>
+                    <label className="flex-1 flex items-center gap-1.5 text-xs text-slate-650 dark:text-slate-300 font-medium cursor-pointer select-none border-l border-slate-200 dark:border-slate-800 pl-3">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="private"
+                        checked={visibility === 'private'}
+                        onChange={() => setVisibility('private')}
+                        className="accent-purple-600 cursor-pointer"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[11px]">Private Draft</span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500">เฉพาะฉันคนเดียว</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
+
             </div>
           </div>
 

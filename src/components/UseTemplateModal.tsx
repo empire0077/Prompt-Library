@@ -14,6 +14,7 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
   const [variables, setVariables] = useState<PromptVariable[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
 
   // Fetch prompt details (both versions + variables + blocks)
   useEffect(() => {
@@ -96,10 +97,64 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
     }
   };
 
+  const handleSendToAIChat = async (platform: string) => {
+    const finalTxt = compilePrompt();
+    try {
+      await navigator.clipboard.writeText(finalTxt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+
+      // Post update to usages metrics
+      fetch(`/api/prompts/${prompt.id}/use`, { method: 'POST' }).catch(err => console.error(err));
+      prompt.usage_count = (prompt.usage_count || 0) + 1;
+
+      let targetUrl = '';
+      let platformLabel = '';
+      if (platform === 'chatgpt') {
+        targetUrl = 'https://chatgpt.com';
+        platformLabel = 'ChatGPT';
+      } else if (platform === 'claude') {
+        targetUrl = 'https://claude.ai';
+        platformLabel = 'Claude';
+      } else if (platform === 'gemini') {
+        targetUrl = 'https://gemini.google.com';
+        platformLabel = 'Gemini';
+      } else if (platform === 'copilot') {
+        targetUrl = 'https://copilot.microsoft.com';
+        platformLabel = 'Microsoft Copilot';
+      }
+
+      setAiFeedback(`คัดลอกคำสั่งลงคลิปบอร์ดแล้ว! กำลังเปิดหน้าเว็บ ${platformLabel}... ให้คุณกดปุ่มวาง (Ctrl+V หรือ ⌘+V) เพื่อเริ่มคุยได้ทันที`);
+      setTimeout(() => {
+        setAiFeedback(null);
+      }, 7000);
+
+      if (targetUrl) {
+        window.open(targetUrl, '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to copy and launch AI platform', err);
+    }
+  };
+
   return (
     <div id="use-template-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm">
-      <div id="use-template-modal-container" className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800/80">
+      <div id="use-template-modal-container" className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800/80 relative">
         
+        {/* Beautiful Floating Custom Toast */}
+        {aiFeedback && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/95 dark:bg-slate-900/95 border border-purple-500/30 text-white text-[11px] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in max-w-lg">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></div>
+            <span className="font-semibold leading-relaxed text-slate-100">{aiFeedback}</span>
+            <button 
+              onClick={() => setAiFeedback(null)} 
+              className="text-slate-400 hover:text-white font-extrabold focus:outline-none transition-colors ml-2 cursor-pointer text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Modal Top Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/40">
           <div>
@@ -234,16 +289,56 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 border-r border-slate-150 dark:border-slate-800 pr-3 mr-1">
+              <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wide">ส่งคำสั่งด่วนไปยัง:</span>
+              
+              <button
+                type="button"
+                onClick={() => handleSendToAIChat('chatgpt')}
+                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-emerald-50/20 dark:bg-slate-900 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 cursor-pointer hover:border-emerald-500 transition-all shadow-sm shrink-0"
+                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง ChatGPT"
+              >
+                <span>GPT</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSendToAIChat('claude')}
+                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-amber-50/20 dark:bg-slate-900 border-amber-500/20 text-amber-600 dark:text-amber-550 cursor-pointer hover:border-amber-500 transition-all shadow-sm shrink-0"
+                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง Claude"
+              >
+                <span>◈ Claude</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSendToAIChat('gemini')}
+                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-blue-50/20 dark:bg-slate-900 border-blue-500/20 text-blue-600 dark:text-blue-400 cursor-pointer hover:border-blue-500 transition-all shadow-sm shrink-0"
+                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง Gemini"
+              >
+                <span>❖ Gemini</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSendToAIChat('copilot')}
+                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-indigo-50/20 dark:bg-slate-900 border-indigo-500/20 text-indigo-600 dark:text-indigo-400 cursor-pointer hover:border-indigo-550 transition-all shadow-sm shrink-0"
+                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง Copilot"
+              >
+                <span>Copilot</span>
+              </button>
+            </div>
+
             <button
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 font-semibold rounded-lg transition-all cursor-pointer"
+              className="px-3.5 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 font-semibold rounded-lg transition-all cursor-pointer"
             >
               ยกเลิก
             </button>
             <button
               onClick={handleCopyCompiled}
               disabled={loading}
-              className={`flex items-center gap-1.5 py-2 px-5 font-bold text-white shadow-md transition-all rounded-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
+              className={`flex items-center gap-1.5 py-2 px-4 font-bold text-white shadow-md transition-all rounded-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shrink-0 ${
                 copied 
                   ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/10'
                   : 'pea-gradient hover:opacity-95 shadow-purple-500/10'
@@ -251,13 +346,13 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4" />
-                  <span>คัดลอกโครงร่างสำเร็จแล้ว!</span>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>คัดลอกแล้ว!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4" />
-                  <span>คัดลอกคำสั่งพร้อมใช้</span>
+                  <Copy className="w-4 h-4 shrink-0" />
+                  <span>คัดลอกคำสั่งหลัก</span>
                 </>
               )}
             </button>

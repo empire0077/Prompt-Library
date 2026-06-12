@@ -56,6 +56,7 @@ export interface Prompt {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  tags_csv?: string | null;
   
   // Expanded fields added in queries
   owner_name?: string;

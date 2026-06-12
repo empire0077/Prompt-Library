@@ -4,6 +4,56 @@ import path from 'path';
 import postgres from 'postgres';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import { GoogleGenAI } from '@google/genai';
+
+let aiClient: GoogleGenAI | null = null;
+function getGeminiClient() {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      console.warn("GEMINI_API_KEY is not configured yet. Semantic search will fallback to direct string search.");
+      return null;
+    }
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
+    });
+  }
+  return aiClient;
+}
+
+async function expandSearchQuery(query: string): Promise<string[]> {
+  const client = getGeminiClient();
+  if (!client) return [query];
+
+  try {
+    const response = await client.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: `You are an intelligent search assistant. Expand the following user search query into a list of semantically related words, core topics, English equivalents of Thai technical/business terminology, related methodologies (e.g., ERM, SWOT, Risk Management, risk analysis, Go / No-Go), abbreviations, or other concepts that a user searching for this would also want to see.
+Return only a JSON array of strings containing 6-10 short terms (including the original query). 
+Exclude any explanations or markup outside the JSON.
+
+Search query: "${query}"`,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    const text = response.text || '[]';
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const unique = Array.from(new Set([query, ...parsed.map(x => String(x).trim())]));
+      return unique;
+    }
+  } catch (error) {
+    console.error("Error expanding search query with Gemini:", error);
+  }
+  return [query];
+}
 
 // Environment parameters setup
 const PORT = 3000;
@@ -535,40 +585,83 @@ app.use(cookieParser());
 
     const categoryIdVal = category_id ? String(category_id) : null;
     const toolIdVal = tool_id ? String(tool_id) : null;
-    const searchVal = search ? `%${search}%` : null;
     const scopeVal = scope ? String(scope) : 'all';
 
     try {
-      const results = await sql`
-        SELECT 
-          p.*, 
-          u.display_name as owner_name, 
-          u.email as owner_email,
-          c.name as category_name,
-          t.name as tool_name,
-          EXISTS(
-            SELECT 1 FROM user_favorites uf 
-            WHERE uf.prompt_id = p.id AND uf.user_id = ${user ? user.id : -1}
-          ) as is_favorited
-        FROM prompts p
-        LEFT JOIN users u ON p.owner_user_id = u.id
-        LEFT JOIN prompt_categories c ON p.category_id = c.id
-        LEFT JOIN tools t ON p.primary_tool_id = t.id
-        WHERE p.archived_at IS NULL
-        AND (
-          (${scopeVal} = 'public' AND p.visibility = 'public')
-          OR (${scopeVal} = 'private' AND p.visibility = 'private' AND p.owner_user_id = ${user ? user.id : -1})
-          OR (${scopeVal} = 'favorites' AND EXISTS(SELECT 1 FROM user_favorites f WHERE f.prompt_id = p.id AND f.user_id = ${user ? user.id : -1}))
-          OR ((${scopeVal} = 'all' OR ${scopeVal} = '') AND (
-            p.visibility = 'public' 
-            OR (${user ? true : false} AND p.owner_user_id = ${user ? user.id : -1})
-          ))
-        )
-        AND (${categoryIdVal}::text IS NULL OR p.category_id::text = ${categoryIdVal})
-        AND (${toolIdVal}::text IS NULL OR p.primary_tool_id::text = ${toolIdVal} OR p.tool_ids LIKE ${'%' + (toolIdVal || '') + '%'})
-        AND (${searchVal}::text IS NULL OR p.title ILIKE ${searchVal} OR p.description ILIKE ${searchVal})
-        ORDER BY p.created_at DESC
-      `;
+      let results;
+      if (search && String(search).trim()) {
+        const q = String(search).trim();
+        const expandedTerms = await expandSearchQuery(q);
+        console.log(`[Semantic Search] Original: "${q}", Expanded: [${expandedTerms.join(', ')}]`);
+
+        // Clean and build PCRE regex pattern for PostgreSQL
+        const escapedTerms = expandedTerms
+          .map(t => t.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
+          .filter(t => t.trim().length > 0);
+
+        const regexPattern = escapedTerms.join('|');
+
+        results = await sql`
+          SELECT 
+            p.*, 
+            u.display_name as owner_name, 
+            u.email as owner_email,
+            c.name as category_name,
+            t.name as tool_name,
+            EXISTS(
+              SELECT 1 FROM user_favorites uf 
+              WHERE uf.prompt_id = p.id AND uf.user_id = ${user ? user.id : -1}
+            ) as is_favorited
+          FROM prompts p
+          LEFT JOIN users u ON p.owner_user_id = u.id
+          LEFT JOIN prompt_categories c ON p.category_id = c.id
+          LEFT JOIN tools t ON p.primary_tool_id = t.id
+          WHERE p.archived_at IS NULL
+          AND (
+            (${scopeVal} = 'public' AND p.visibility = 'public')
+            OR (${scopeVal} = 'private' AND p.visibility = 'private' AND p.owner_user_id = ${user ? user.id : -1})
+            OR (${scopeVal} = 'favorites' AND EXISTS(SELECT 1 FROM user_favorites f WHERE f.prompt_id = p.id AND f.user_id = ${user ? user.id : -1}))
+            OR ((${scopeVal} = 'all' OR ${scopeVal} = '') AND (
+              p.visibility = 'public' 
+              OR (${user ? true : false} AND p.owner_user_id = ${user ? user.id : -1})
+            ))
+          )
+          AND (${categoryIdVal}::text IS NULL OR p.category_id::text = ${categoryIdVal})
+          AND (${toolIdVal}::text IS NULL OR p.primary_tool_id::text = ${toolIdVal} OR p.tool_ids LIKE ${'%' + (toolIdVal || '') + '%'})
+          AND (p.title ~* ${regexPattern} OR p.description ~* ${regexPattern} OR c.name ~* ${regexPattern} OR p.tags_csv ~* ${regexPattern})
+          ORDER BY p.created_at DESC
+        `;
+      } else {
+        results = await sql`
+          SELECT 
+            p.*, 
+            u.display_name as owner_name, 
+            u.email as owner_email,
+            c.name as category_name,
+            t.name as tool_name,
+            EXISTS(
+              SELECT 1 FROM user_favorites uf 
+              WHERE uf.prompt_id = p.id AND uf.user_id = ${user ? user.id : -1}
+            ) as is_favorited
+          FROM prompts p
+          LEFT JOIN users u ON p.owner_user_id = u.id
+          LEFT JOIN prompt_categories c ON p.category_id = c.id
+          LEFT JOIN tools t ON p.primary_tool_id = t.id
+          WHERE p.archived_at IS NULL
+          AND (
+            (${scopeVal} = 'public' AND p.visibility = 'public')
+            OR (${scopeVal} = 'private' AND p.visibility = 'private' AND p.owner_user_id = ${user ? user.id : -1})
+            OR (${scopeVal} = 'favorites' AND EXISTS(SELECT 1 FROM user_favorites f WHERE f.prompt_id = p.id AND f.user_id = ${user ? user.id : -1}))
+            OR ((${scopeVal} = 'all' OR ${scopeVal} = '') AND (
+              p.visibility = 'public' 
+              OR (${user ? true : false} AND p.owner_user_id = ${user ? user.id : -1})
+            ))
+          )
+          AND (${categoryIdVal}::text IS NULL OR p.category_id::text = ${categoryIdVal})
+          AND (${toolIdVal}::text IS NULL OR p.primary_tool_id::text = ${toolIdVal} OR p.tool_ids LIKE ${'%' + (toolIdVal || '') + '%'})
+          ORDER BY p.created_at DESC
+        `;
+      }
 
       // Resolve multiple tool names in Node.js
       const allActiveTools = await sql`SELECT id, name FROM tools WHERE is_active = true`;
@@ -734,7 +827,7 @@ app.use(cookieParser());
       return res.status(401).json({ error: 'ล็อกอินเพื่อสร้างคำสั่ง AI ใหม่' });
     }
 
-    const { title, description, category_id, primary_tool_id, tool_ids, visibility, blocks, variables } = req.body;
+    const { title, description, category_id, primary_tool_id, tool_ids, visibility, blocks, variables, tags_csv } = req.body;
 
     try {
       const rawToolIds = Array.isArray(tool_ids) ? tool_ids : (tool_ids ? String(tool_ids).split(',') : []);
@@ -747,11 +840,11 @@ app.use(cookieParser());
         const [pRow] = await tx`
           INSERT INTO prompts (
             owner_user_id, category_id, primary_tool_id, tool_ids, title, description, 
-            visibility, status, created_at, updated_at, usage_count, copy_count, favorite_count
+            visibility, status, created_at, updated_at, usage_count, copy_count, favorite_count, tags_csv
           )
           VALUES (
             ${user.id}, ${category_id}, ${finalPrimaryToolId}, ${finalToolIdsStr || null}, ${title}, ${description}, 
-            ${visibility}, 'published', now(), now(), 0, 0, 0
+            ${visibility}, 'published', now(), now(), 0, 0, 0, ${tags_csv || null}
           )
           RETURNING *
         `;
@@ -815,7 +908,7 @@ app.use(cookieParser());
     }
 
     const { id } = req.params;
-    const { title, description, category_id, primary_tool_id, tool_ids, visibility, blocks, variables } = req.body;
+    const { title, description, category_id, primary_tool_id, tool_ids, visibility, blocks, variables, tags_csv } = req.body;
 
     try {
       const [existing] = await sql`SELECT owner_user_id FROM prompts WHERE id = ${id} LIMIT 1`;
@@ -837,7 +930,8 @@ app.use(cookieParser());
         await tx`
           UPDATE prompts 
           SET title = ${title}, description = ${description}, category_id = ${category_id}, 
-              primary_tool_id = ${finalPrimaryToolId}, tool_ids = ${finalToolIdsStr || null}, visibility = ${visibility}, updated_at = now()
+              primary_tool_id = ${finalPrimaryToolId}, tool_ids = ${finalToolIdsStr || null}, visibility = ${visibility}, 
+              tags_csv = ${tags_csv || null}, updated_at = now()
           WHERE id = ${id}
         `;
 
@@ -963,7 +1057,16 @@ app.use(cookieParser());
 
   // Only run the server listener if we are NOT running as a Serverless function on Vercel
   if (!process.env.VERCEL) {
-    setupVite().then(() => {
+    setupVite().then(async () => {
+      // Run tags_csv migration on startup
+      try {
+        console.log('Ensuring tags_csv column exists on prompts table...');
+        await sql`ALTER TABLE prompts ADD COLUMN IF NOT EXISTS tags_csv text;`;
+        console.log('Database tag schema verified successfully.');
+      } catch (err: any) {
+        console.error('Failed to run tags_csv DB migration:', err.message || err);
+      }
+
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`Express custom server running on http://localhost:${PORT}`);
       });

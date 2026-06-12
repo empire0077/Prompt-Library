@@ -99,9 +99,23 @@ export default function PromptCard({
         </h3>
 
         {/* Description */}
-        <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-4 line-clamp-3 font-normal" style={{ minHeight: '3.5rem' }}>
+        <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-3 line-clamp-3 font-normal" style={{ minHeight: '3.5rem' }}>
           {prompt.description || 'ไม่มีคำอธิบายสำหรับคำสั่งนี้'}
         </p>
+
+        {/* Tags badges */}
+        {prompt.tags_csv && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {prompt.tags_csv.split(',').map((tag: string) => tag.trim()).filter(Boolean).map((tag: string) => (
+              <span 
+                key={tag} 
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-550/5 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/10"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
 
 
       </div>
