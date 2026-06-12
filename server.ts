@@ -108,7 +108,8 @@ async function ensureConnected(): Promise<any> {
           try {
             const client = postgres(connStr, {
               ssl: parsedIsLocal ? undefined : { rejectUnauthorized: false },
-              connect_timeout: 4 // Cap at 4s for concurrent lookups
+              connect_timeout: 4, // Cap at 4s for concurrent lookups
+              prepare: false
             });
             clients.push(client);
 

@@ -500,11 +500,13 @@ export default function App() {
         )}
 
         {/* Corporate Legal Footer */}
-        <footer className="mt-auto pt-12 text-center text-[10px] text-slate-400 dark:text-slate-500 font-medium tracking-wide flex items-center justify-center gap-2 border-t border-slate-100 dark:border-slate-800">
+        <footer className="mt-auto pt-12 text-center text-[10px] text-slate-400 dark:text-slate-500 font-medium tracking-wide flex items-center justify-center gap-2 border-t border-slate-100 dark:border-slate-800 flex-wrap">
           <span>⚡</span>
           <span>© 2026 Your Prompt Library Workspace</span>
           <span>•</span>
           <span>คลังจัดเก็บและพัฒนาชุดคำสั่งเพื่อเพิ่มประสิทธิภาพและเสถียรภาพในการทำงาน</span>
+          <span>•</span>
+          <span>Handcrafted with 💜 by <a href="mailto:nawapat@gmail.com" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold underline underline-offset-2 transition-colors">Em Nawapat</a></span>
         </footer>
 
         {/* Floating Modals rendering panels */}
