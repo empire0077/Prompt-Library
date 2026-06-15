@@ -110,24 +110,40 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
 
       let targetUrl = '';
       let platformLabel = '';
+      
+      // Limit prefilled text length to 800 chars for URL parameter to avoid Web Server (WAF / 431 / 414) rejection
+      let urlPrompt = finalTxt;
+      let isTruncated = false;
+      if (finalTxt.length > 800) {
+        urlPrompt = finalTxt.slice(0, 800) + '... (กรุณากด วาง/Paste หรือ Ctrl+V เพื่อใช้คำสั่งเต็ม)';
+        isTruncated = true;
+      }
+      
+      const encodedPrompt = encodeURIComponent(urlPrompt);
+      
       if (platform === 'chatgpt') {
-        targetUrl = 'https://chatgpt.com';
+        targetUrl = `https://chatgpt.com/?prompt=${encodedPrompt}`;
         platformLabel = 'ChatGPT';
       } else if (platform === 'claude') {
-        targetUrl = 'https://claude.ai';
+        targetUrl = `https://claude.ai/new?q=${encodedPrompt}`;
         platformLabel = 'Claude';
       } else if (platform === 'gemini') {
-        targetUrl = 'https://gemini.google.com';
+        targetUrl = `https://gemini.google.com/app?q=${encodedPrompt}`;
         platformLabel = 'Gemini';
       } else if (platform === 'copilot') {
-        targetUrl = 'https://copilot.microsoft.com';
+        targetUrl = `https://copilot.microsoft.com/?prompt=${encodedPrompt}`;
         platformLabel = 'Microsoft Copilot';
       }
 
-      setAiFeedback(`คัดลอกคำสั่งลงคลิปบอร์ดแล้ว! กำลังเปิดหน้าเว็บ ${platformLabel}... ให้คุณกดปุ่มวาง (Ctrl+V หรือ ⌘+V) เพื่อเริ่มคุยได้ทันที`);
+      if (isTruncated) {
+        setAiFeedback(`คัดลอกคำสั่งเรียบร้อยแล้ว! เนื่องจากคำสั่งมีความยาวมาก ระบบจำกัดความยาวในลิงก์และเปิดหน้าเว็บ ${platformLabel} ให้โดยไม่เกิดข้อผิดพลาด คุณสามารถกดวาง (Ctrl+V / ⌘+V) เพื่อส่งคำสั่งฉบับเต็มได้ทันทีครับ`);
+      } else {
+        setAiFeedback(`คัดลอกคำสั่งเรียบร้อยแล้ว และระบบส่งข้อความตรงไปป้อนบน ${platformLabel} ให้โดยอัตโนมัติแล้วครับ!`);
+      }
+      
       setTimeout(() => {
         setAiFeedback(null);
-      }, 7000);
+      }, 8500);
 
       if (targetUrl) {
         window.open(targetUrl, '_blank');
@@ -237,14 +253,14 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
 
             {/* Right Column: Live Update Output Preview Panel */}
             <div className="w-1/2 overflow-hidden flex flex-col bg-slate-50/50 dark:bg-slate-950/40">
-              <div className="p-4 border-b border-slate-150 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/80">
+              <div className="p-4 border-b border-slate-150 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-2.5 bg-slate-50 dark:bg-slate-950/80">
                 <div className="flex items-center gap-2">
                   <Play className="w-4 h-4 text-purple-600 dark:text-purple-400 fill-purple-600 dark:fill-purple-400" />
                   <span className="font-bold text-slate-700 dark:text-slate-300 text-xs text-left">คำสั่งที่เรียบเรียงสำเร็จ (Compiled Prompt)</span>
                 </div>
                 
                 {prompt.tool_name && (
-                  <span className="text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-0.5 px-2 rounded-md font-mono text-slate-500 dark:text-slate-400 font-bold">
+                  <span className="text-[9px] bg-purple-100 dark:bg-purple-900/30 border border-purple-200/40 py-1 px-2 rounded-md font-mono text-purple-750 dark:text-purple-300 font-bold">
                     Target: {prompt.tool_name}
                   </span>
                 )}
