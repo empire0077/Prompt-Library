@@ -4,7 +4,7 @@ import {
   Code, User, Edit3, Database, Tv, LogIn, LogOut, UserCheck,
   FileText, Briefcase, Cpu, TrendingUp, Palette, Shield, Server,
   Zap, Headphones, Coins, BarChart2, Settings, Mail, Phone, Calendar, Wrench,
-  Flame, GraduationCap, ShoppingCart
+  Flame, GraduationCap, ShoppingCart, Camera, Brain
 } from 'lucide-react';
 import { User as UserType, PromptCategory, Tool, Prompt } from '../types';
 import LogoIcon from './LogoIcon';
@@ -66,6 +66,12 @@ export default function Sidebar({
     // Explicit overrides for user request
     if (name.includes('procurement') || name.includes('จัดซื้อ') || name.includes('จัดจ้าง') || name.includes('พัสดุ')) {
       return <ShoppingCart className="w-4 h-4" />;
+    }
+    if (name === 'analysis' || (name.includes('analysis') && !name.includes('data'))) {
+      return <Brain className="w-4 h-4" />;
+    }
+    if (name === 'image and video' || name.includes('image and video') || name.includes('image') || name.includes('video') || name.includes('ภาพ') || name.includes('วิดีโอ')) {
+      return <Camera className="w-4 h-4" />;
     }
     if (name.includes('management') || name.includes('การจัดการ') || name.includes('ผู้บริหาร') || name.includes('บริหาร')) {
       // Avoid matching Knowledge Management
@@ -198,13 +204,15 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-550" />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             placeholder="ค้นหาโครงสร้างคำสั่ง..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:bg-white dark:focus:bg-slate-955 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder-slate-400 text-slate-705 dark:text-slate-200"
+            className={`w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-slate-200 ${
+              darkMode ? 'focus:bg-slate-950 text-slate-200' : 'focus:bg-white text-slate-900'
+            }`}
           />
         </div>
 

@@ -22,9 +22,9 @@ export default function App() {
       if (saved !== null) {
         return saved === 'true';
       }
-      return false; // Choose off-white by default as per guidelines
+      return true; // Default to dark mode when there is no saved preference
     }
-    return false;
+    return true;
   });
 
   useEffect(() => {
@@ -47,9 +47,17 @@ export default function App() {
 
   // Filtering states
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedScope, setSelectedScope] = useState('all'); // 'all', 'public', 'private', 'favorites'
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Loading & Error states
   const [loading, setLoading] = useState(true);
@@ -110,7 +118,7 @@ export default function App() {
     setPromptLoading(true);
     try {
       const params = new URLSearchParams();
-      if (searchQuery.trim()) params.append('search', searchQuery);
+      if (debouncedSearchQuery.trim()) params.append('search', debouncedSearchQuery);
       if (selectedScope) params.append('scope', selectedScope);
       if (selectedCategory) params.append('category_id', selectedCategory);
       if (selectedTool) params.append('tool_id', selectedTool);
@@ -138,7 +146,7 @@ export default function App() {
 
   useEffect(() => {
     fetchPromptsData();
-  }, [searchQuery, selectedScope, selectedCategory, selectedTool, currentUser]);
+  }, [debouncedSearchQuery, selectedScope, selectedCategory, selectedTool, currentUser]);
 
   const handleSignInSuccess = async () => {
     try {
@@ -520,6 +528,7 @@ export default function App() {
           prompt={activeUsePrompt}
           isOpen={isUseTemplateOpen}
           onClose={() => setIsUseTemplateOpen(false)}
+          darkMode={darkMode}
         />
 
         <PromptModal
@@ -530,6 +539,7 @@ export default function App() {
           tools={tools}
           onSave={fetchPromptsData}
           onRefreshMasterData={loadMasterData}
+          darkMode={darkMode}
         />
       </main>
     </div>

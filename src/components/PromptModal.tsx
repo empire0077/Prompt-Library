@@ -10,6 +10,7 @@ interface PromptModalProps {
   tools: Tool[];
   onSave: () => void;
   onRefreshMasterData: () => Promise<void>;
+  darkMode?: boolean;
 }
 
 const CATEGORY_TAG_PRESETS: Record<string, string[]> = {
@@ -32,7 +33,8 @@ export default function PromptModal({
   categories,
   tools,
   onSave,
-  onRefreshMasterData
+  onRefreshMasterData,
+  darkMode = false
 }: PromptModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -313,7 +315,7 @@ export default function PromptModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="เช่น [ฝ่ายจัดหา] สรุปหลักเกณฑ์การยื่นซองสอบ TOR..."
-                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
@@ -324,7 +326,7 @@ export default function PromptModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="เช่น ใช้แปลงข้อมูลดิบของข้อตกลงเอกสารประกวดราคาที่มีพารามิเตอร์..."
-                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
+                className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
@@ -357,7 +359,7 @@ export default function PromptModal({
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         placeholder="ป้อนชื่อหมวดหมู่..."
-                        className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
+                        className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-900 dark:text-slate-200"
                         autoFocus
                       />
                       <button
@@ -383,12 +385,12 @@ export default function PromptModal({
                     <select
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
-                      className="w-full text-xs p-2.5 border border-purple-300 dark:border-purple-900/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
+                      className="w-full text-xs p-2.5 border border-purple-300 dark:border-purple-900/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-900 dark:text-slate-200 cursor-pointer"
                     >
                       {[...categories]
                         .sort((a, b) => a.name.localeCompare(b.name, 'th'))
                         .map((cat) => (
-                          <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">{cat.name}</option>
+                          <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200">{cat.name}</option>
                         ))}
                     </select>
                   )}
@@ -456,7 +458,7 @@ export default function PromptModal({
                             }
                           }}
                           placeholder="พิมพ์แท็กย่อยอื่นแล้วกด Enter เพื่อบันทึก..."
-                          className="flex-1 text-[11px] p-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                          className="flex-1 text-[11px] p-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-purple-500 focus:outline-none font-sans bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200"
                         />
                         <button
                           type="button"
@@ -536,7 +538,7 @@ export default function PromptModal({
                         value={newToolName}
                         onChange={(e) => setNewToolName(e.target.value)}
                         placeholder="ป้อนชื่อโมเดล..."
-                        className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
+                        className="flex-1 text-xs p-2 border border-purple-200 dark:border-purple-900 rounded-xl focus:ring-1 focus:ring-purple-500/20 focus:outline-none font-sans bg-white dark:bg-slate-950/40 text-slate-900 dark:text-slate-200"
                         autoFocus
                       />
                       <button
@@ -595,7 +597,7 @@ export default function PromptModal({
                             setSelectedToolIds((prev) => [...prev, val]);
                           }
                         }}
-                        className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-100 cursor-pointer"
+                        className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans bg-white dark:bg-slate-950/40 text-slate-900 dark:text-slate-200 cursor-pointer"
                       >
                         <option value="" disabled className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- เลือกโมเดล AI เพื่อแนะนำเพิ่มเติม --</option>
                         {tools.map((t) => (

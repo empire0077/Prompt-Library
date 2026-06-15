@@ -6,9 +6,10 @@ interface UseTemplateModalProps {
   prompt: Prompt | null;
   isOpen: boolean;
   onClose: () => void;
+  darkMode?: boolean;
 }
 
-export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplateModalProps) {
+export default function UseTemplateModal({ prompt, isOpen, onClose, darkMode = false }: UseTemplateModalProps) {
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<PromptBlock[]>([]);
   const [variables, setVariables] = useState<PromptVariable[]>([]);
@@ -243,7 +244,9 @@ export default function UseTemplateModal({ prompt, isOpen, onClose }: UseTemplat
                         value={values[variable.name] || ''}
                         onChange={(e) => handleInputChange(variable.name, e.target.value)}
                         placeholder={variable.placeholder || 'ระบุรายละเอียด...'}
-                        className="w-full text-xs p-3 bg-slate-50 dark:bg-slate-950/20 rounded-xl border border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
+                        className={`w-full text-xs p-3 bg-slate-50 dark:bg-slate-950/20 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 ${
+                          darkMode ? 'focus:bg-slate-900 text-slate-200' : 'focus:bg-white text-slate-900'
+                        }`}
                       />
                     </div>
                   ))}

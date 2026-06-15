@@ -61,10 +61,10 @@ export default function PromptCard({
   };
 
   return (
-    <div id={`prompt-card-${prompt.id}`} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800/80 hover:border-purple-200 dark:hover:border-purple-800/80 hover:shadow-lg dark:hover:shadow-purple-950/10 transition-all p-5 flex flex-col justify-between group relative overflow-hidden">
+    <div id={`prompt-card-${prompt.id}`} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800/80 hover:border-purple-200 dark:hover:border-purple-800/80 hover:shadow-xl hover:shadow-purple-500/5 dark:hover:shadow-purple-950/20 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out p-5 flex flex-col justify-between group relative overflow-hidden">
       
       {/* Visibility Corner Indicator Banner */}
-      <div className="absolute top-0 right-0 h-1.5 w-16 bg-purple-500/10 dark:bg-purple-500/20"></div>
+      <div className="absolute top-0 right-0 h-1.5 w-16 bg-purple-500/10 dark:bg-purple-500/20 group-hover:w-full group-hover:bg-purple-500/20 dark:group-hover:bg-purple-500/30 transition-all duration-500"></div>
       
       <div>
         {/* Card Header metadata */}

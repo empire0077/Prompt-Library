@@ -26,7 +26,23 @@ function getGeminiClient() {
   return aiClient;
 }
 
+const queryExpansionCache = new Map<string, string[]>();
+let geminiBypassUntil = 0; // Timestamp in ms
+
 async function expandSearchQuery(query: string): Promise<string[]> {
+  const cleanQuery = query.trim().toLowerCase();
+  if (!cleanQuery) return [query];
+
+  // 1. Check in-memory session cache
+  if (queryExpansionCache.has(cleanQuery)) {
+    return queryExpansionCache.get(cleanQuery)!;
+  }
+
+  // 2. Check if circuit breaker / api bypass is active
+  if (Date.now() < geminiBypassUntil) {
+    return [query];
+  }
+
   const client = getGeminiClient();
   if (!client) return [query];
 
@@ -47,10 +63,31 @@ Search query: "${query}"`,
     const parsed = JSON.parse(text);
     if (Array.isArray(parsed) && parsed.length > 0) {
       const unique = Array.from(new Set([query, ...parsed.map(x => String(x).trim())]));
+      
+      // Store in cache
+      queryExpansionCache.set(cleanQuery, unique);
+      if (queryExpansionCache.size > 300) {
+        // Evict oldest entry
+        const firstKey = queryExpansionCache.keys().next().value;
+        if (firstKey !== undefined) {
+          queryExpansionCache.delete(firstKey);
+        }
+      }
       return unique;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error expanding search query with Gemini:", error);
+    
+    // Check if rate limited (429) or service unavailable (503)
+    const errStr = String(error).toLowerCase();
+    const is429 = errStr.includes("429") || errStr.includes("quota") || errStr.includes("resource_exhausted") || errStr.includes("rate limit");
+    const is503 = errStr.includes("503") || errStr.includes("unavailable");
+    
+    if (is429 || is503) {
+      // Pause Gemini calls for 60 seconds to avoid flooding the logs & hitting rate limit continuously
+      geminiBypassUntil = Date.now() + 60 * 1000;
+      console.warn(`[Gemini Circuit Breaker] Rate limited or API unavailable. Bypassing Gemini expansion for 60 seconds.`);
+    }
   }
   return [query];
 }
