@@ -3,6 +3,7 @@ import {
   Globe, Lock, Star, Sparkles, Filter, Database, 
   Trash2, Terminal, RefreshCw, AlertCircle, Bookmark, Compass
 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import Sidebar from './components/Sidebar';
 import LogoIcon from './components/LogoIcon';
 import PromptCard from './components/PromptCard';
@@ -542,6 +543,7 @@ export default function App() {
           darkMode={darkMode}
         />
       </main>
+      <Analytics />
     </div>
   );
 }
