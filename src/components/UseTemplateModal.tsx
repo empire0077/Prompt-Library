@@ -122,24 +122,20 @@ export default function UseTemplateModal({ prompt, isOpen, onClose, darkMode = f
       
       const encodedPrompt = encodeURIComponent(urlPrompt);
       
-      if (platform === 'chatgpt') {
-        targetUrl = `https://chatgpt.com/?prompt=${encodedPrompt}`;
-        platformLabel = 'ChatGPT';
-      } else if (platform === 'claude') {
-        targetUrl = `https://claude.ai/new?q=${encodedPrompt}`;
-        platformLabel = 'Claude';
-      } else if (platform === 'gemini') {
-        targetUrl = `https://gemini.google.com/app?q=${encodedPrompt}`;
-        platformLabel = 'Gemini';
+      if (platform === 'coremind') {
+        targetUrl = 'https://coremind.pea.co.th';
+        platformLabel = 'PEA CoreMind';
       } else if (platform === 'copilot') {
         targetUrl = `https://copilot.microsoft.com/?prompt=${encodedPrompt}`;
         platformLabel = 'Microsoft Copilot';
       }
 
-      if (isTruncated) {
+      if (platform === 'coremind') {
+        setAiFeedback('คัดลอกคำสั่ง Prompt เรียบร้อยแล้ว! กำลังเปิดหน้าเว็บ CoreMind (coremind.pea.co.th) คุณสามารถกดวาง (Ctrl+V / ⌘+V) เพื่อเริ่มใช้งานได้ทันทีครับ');
+      } else if (isTruncated) {
         setAiFeedback(`คัดลอกคำสั่งเรียบร้อยแล้ว! เนื่องจากคำสั่งมีความยาวมาก ระบบจำกัดความยาวในลิงก์และเปิดหน้าเว็บ ${platformLabel} ให้โดยไม่เกิดข้อผิดพลาด คุณสามารถกดวาง (Ctrl+V / ⌘+V) เพื่อส่งคำสั่งฉบับเต็มได้ทันทีครับ`);
       } else {
-        setAiFeedback(`คัดลอกคำสั่งเรียบร้อยแล้ว และระบบส่งข้อความตรงไปป้อนบน ${platformLabel} ให้โดยอัตโนมัติแล้วครับ!`);
+        setAiFeedback(`คัดลอกคำสั่งเรียบร้อยแล้ว และระบบเปิดหน้าเว็บ ${platformLabel} ให้เรียบร้อยแล้วครับ!`);
       }
       
       setTimeout(() => {
@@ -304,7 +300,7 @@ export default function UseTemplateModal({ prompt, isOpen, onClose, darkMode = f
         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 text-xs">
           <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 font-semibold leading-none text-left">
             <Info className="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
-            <span>กรอกเนื้อหาและกดปุ่มคัดลอกคำสั่งเพื่อไปรันต่อบนระบบ AI นอกได้ทันที</span>
+            <span>กรอกเนื้อหาและกดปุ่มคัดลอกคำสั่งเพื่อนำไปใช้งานบนระบบ CoreMind หรือ AI ได้ทันที</span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -313,35 +309,18 @@ export default function UseTemplateModal({ prompt, isOpen, onClose, darkMode = f
               
               <button
                 type="button"
-                onClick={() => handleSendToAIChat('chatgpt')}
-                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-emerald-50/20 dark:bg-slate-900 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 cursor-pointer hover:border-emerald-500 transition-all shadow-sm shrink-0"
-                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง ChatGPT"
+                onClick={() => handleSendToAIChat('coremind')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-lg border border-purple-300 dark:border-purple-700/80 bg-purple-50/80 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 cursor-pointer hover:border-purple-500 transition-all shadow-sm shrink-0"
+                title="คัดลอกคำสั่งเรียบร้อยแล้วเปิด CoreMind (coremind.pea.co.th)"
               >
-                <span>GPT</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSendToAIChat('claude')}
-                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-amber-50/20 dark:bg-slate-900 border-amber-500/20 text-amber-600 dark:text-amber-550 cursor-pointer hover:border-amber-500 transition-all shadow-sm shrink-0"
-                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง Claude"
-              >
-                <span>◈ Claude</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSendToAIChat('gemini')}
-                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-blue-50/20 dark:bg-slate-900 border-blue-500/20 text-blue-600 dark:text-blue-400 cursor-pointer hover:border-blue-500 transition-all shadow-sm shrink-0"
-                title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง Gemini"
-              >
-                <span>❖ Gemini</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400 animate-pulse"></span>
+                <span>CoreMind</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleSendToAIChat('copilot')}
-                className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-805 bg-white hover:bg-indigo-50/20 dark:bg-slate-900 border-indigo-500/20 text-indigo-600 dark:text-indigo-400 cursor-pointer hover:border-indigo-550 transition-all shadow-sm shrink-0"
+                className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-extrabold rounded-lg border border-slate-200 dark:border-slate-800 bg-white hover:bg-indigo-50/20 dark:bg-slate-900 border-indigo-500/20 text-indigo-600 dark:text-indigo-400 cursor-pointer hover:border-indigo-550 transition-all shadow-sm shrink-0"
                 title="คัดลอกคำสั่งเรียบร้อยแล้วส่งไปยัง Copilot"
               >
                 <span>Copilot</span>
